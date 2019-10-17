@@ -1,17 +1,18 @@
-name: "Baltic_Productivity"
+name: Baltic_Productivity
 output_dir: ../docs
 navbar:
-  title: "Baltic_Productivity"
+  title: Baltic Productivity
   left:
   - text: Home
     href: index.html
-  - text: About
-    href: about.html
-  - text: License
-    href: license.html
+  right:
+  - icon: fa-github
+    text: Source code
+    href: https://github.com/jens-daniel-mueller/Baltic_Productivity
 output:
   workflowr::wflow_html:
     toc: yes
     toc_float: yes
-    theme: cosmo
+    theme: flatly
     highlight: textmate
+    code_folding: hide
