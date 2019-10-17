@@ -1,5 +1,9 @@
-# Baltic_Productivity
+# Baltic Productivity
 
-A [workflowr][] project.
+In this repo we present our ongoing ambition to quantify net primary production in the surface waters of the Central Baltic Sea. We try to compile the most accurate estimate by following a multi-observatory approach, merging observations from VOS Finnmaid, the hydrographical GETM model, ARGO floats and satellites.
 
-[workflowr]: https://github.com/jdblischak/workflowr
+Results can be accessed under:
+https://jens-daniel-mueller.github.io/Baltic_Productivity
+
+
+Dr. Jens Daniel Müller, 2019
