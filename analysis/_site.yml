@@ -5,6 +5,8 @@ navbar:
   left:
   - text: Home
     href: index.html
+  - text: Finnmaid-GETM
+    href: Finnmaid-GETM.html
   right:
   - icon: fa-github
     text: Source code
