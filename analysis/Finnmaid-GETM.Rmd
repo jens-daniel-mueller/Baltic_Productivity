@@ -7,9 +7,107 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Introduction
+# Aim of the project
+
+Two datasets are available describing key parameters of baltic sea. Observational data is provided by the VOS Finnmaid, measuring (amongst others) pCO2, O2, Temperature and Salinity every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water. 
+The second dataset is modelled data providing information and values for all water depths and locations in the baltic sea. 
+The two datasets are to be compared with regards to their ability to describe primary production in the baltic sea and how close to each other measured and modelled data is.
+
+The data is saved in the netcdf format. We describe how to read in the data, compare the relevant variables to finally viualize the relation between the two and to describe primary production in the Baltic Sea.
+
+The documnetation of the project is realized with `workflowr`, combining `R Markdown` with the version control Github as input for this webside. 
+
+# Read Finnmaid data
+
+The data from the VOS Finnmaid is read in from a netcdf file created by Bittig & Müller.
+
+The following packages are needed: 
+
+```{r message=FALSE, warning=FALSE} 
+library(tidyverse)
+library(ncdf4)
+library(lubridate)
+library(geosphere)
+```
+
+To open a file in the netcdf format we use the openning function of the ncdf4 package. With the function `file.choose()` the file can be chosen from an explorer window, independent of the files location.
 
 ```{r}
+nc <- nc_open(file.choose())
+```
+
+```{r eval = FALSE, echo= FALSE}
+
+nc <- nc_open("GETM/Finnmaid", "FM_all_2019_on_standard_tracks.nc")
+```
+
+First of all, we want to get an overview of the file.
+
+```{r}
+print(nc)
+attributes(nc$var)
+attributes(nc$dim)
+```
+
+# Read GETM data
+
+```{r datapreparation, echo=FALSE}
+
+filesList <- list.files(path= "data/GETM", pattern = "Finnmaid.E.2d", recursive = TRUE)
+```
+
+```{r variables}
+
+select_route <- "E"
+low_lat <- 57.5
+high_lat <- 58.5
 
 ```
 
+
+```{r loop}
+
+for (n in 7:length(filesList)) {
+
+file <- filesList[n]
+
+nc <- nc_open(paste("data/GETM/", file, sep = ""))
+
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+t <- ymd_hms("2006-1-1 00:00:00") + ncvar_get(nc, "time")
+
+var <- "SST"
+
+array <- ncvar_get(nc, var) # store the data in a 3-dimensional array
+dim(array) # should be 2d with dimensions: 1575 coordinate, 31d*(24h/d/3h)=248 time steps
+
+array <- as.data.frame(t(array), xy=TRUE)
+array <- as_tibble(array)
+
+
+
+SST_GETM <- array %>%
+  set_names(as.character(lat)) %>%
+  mutate(date_time = t) %>%
+  gather("lat", "value", 1:length(lat)) %>%
+  mutate(lat = as.numeric(lat)) %>%
+  filter(lat > low_lat, lat<high_lat) %>%
+  group_by(date_time) %>%
+  summarise_all("mean") %>%
+  ungroup() %>%
+  mutate(var = var)
+
+write.csv(SST_GETM, file = paste("Finnmaid_E_2d_", n,".csv", sep = ""), row.names= F, quote = F)
+
+nc_close(nc)
+rm(array, var, nc, t, lat, lon, SST_GETM)
+
+}
+```
+
+
+
+# Compare SST readings
+
+...under construction...
