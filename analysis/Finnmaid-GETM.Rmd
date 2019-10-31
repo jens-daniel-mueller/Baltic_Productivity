@@ -82,8 +82,10 @@ nc <- nc_open(paste("data/GETM/", file, sep = ""))
 
 lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
-t <- ymd_hms("2006-1-1 00:00:00") + ncvar_get(nc, "time")
+time_units <- nc$dim$time$units
 
+#t <- ymd_hms("2006-1-1 00:00:00") + ncvar_get(nc, "time")
+t <- ymd_hms(time_units)
 var <- "SST"
 
 array <- ncvar_get(nc, var) # store the data in a 3-dimensional array
@@ -104,6 +106,7 @@ SST_GETM <- array %>%
   summarise_all("mean") %>%
   ungroup() %>%
   mutate(var = var)
+
 
 write.csv(SST_GETM, file = paste("Finnmaid_E_2d_", n,".csv", sep = ""), row.names= F, quote = F)
 
@@ -169,26 +172,43 @@ var <- "SST_east"
 nc_close(nc)
 rm(list=setdiff(ls(), c("timeseries", "SST_GETM", "low_lat", "high_lat")))
 
-timeseries <- timeseries %>% 
-  mutate(date_time = as.POSIXct(date))
+timeseries_mean <- timeseries %>% 
+  mutate(date_time = as.POSIXct(date)) %>% 
+#mean of transects from finnmaid (ID)
+  group_by(ID) %>% 
+  summarise_all(list(~mean(.,na.rm = TRUE),
+                     ~min(., na.rm= TRUE),
+                     ~max(., na.rm= TRUE),
+                     ~sd(., na.rm = TRUE))) 
 ```
 
 To compare it with the model data, we -- for now -- open an examplary data file, we prepared in the previous steps.
 Values are to be compared per day. Therefore, we need to calculate means per day before we continue. This is done on the example of the dataset "Finnmaid_E_2d_157.csv", that contains inforamtion for the whole year of 2006.
 
 ```{r dailymean}
+SST_GETM_whole <- {}
+SST_GETM_mean <- {}
+for (n in 7:157) {
+ SST_GETM <- read.csv(paste("Finnmaid_E_2d_", n ,".csv", sep = ""))
+ SST_GETM_whole <- rbind(SST_GETM_whole, SST_GETM)
+ 
+}
 
-SST_GETM <- read.csv("Finnmaid_E_2d_157.csv") #file nr 157 is the "GETM-test" dataset where data for a whole year was pooled
-SST_GETM$date_time <- as.POSIXct(SST_GETM$date_time)
+#SST_GETM <- read.csv("Finnmaid_E_2d_157.csv") #file nr 157 is the "GETM-test" dataset where data for a whole year was pooled
+#SST_GETM$date_time <- as.POSIXct(SST_GETM$date_time)
 
-timeseries <- timeseries %>%
-  mutate(date_time = as.POSIXct(date))
+#SST_GETM_whole <- as.POSIXct(SST_GETM_whole$date_time)
 
-SST_GETM_mean <- SST_GETM %>% 
+#timeseries <- timeseries %>%
+#  mutate(date_time = as.POSIXct(date))
+
+SST_GETM_mean <- SST_GETM_whole %>% 
   group_by(date_time) %>% 
   summarise_all(list(~mean(.,na.rm = TRUE)))
 
 SST_GETM_mean$var <- "SST"
+
+#comparison <- cbind(timeseries_mean,SST_GETM_mean)
 
 ```
 
@@ -204,8 +224,8 @@ if (exists("timeseries", inherits = FALSE)){
 timeseries <- timeseries %>% 
   mutate(date_time = as.POSIXct(date_time))
 
+timeseries_mean %>%
 
-timeseries %>%
   filter(date_time >= ymd_h("2006-01-01 T00"),
          date_time <= ymd_h("2006-12-31 T24")) %>%
   ggplot()+
