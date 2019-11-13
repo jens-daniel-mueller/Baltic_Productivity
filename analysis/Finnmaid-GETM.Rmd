@@ -7,21 +7,21 @@ editor_options:
   chunk_output_type: console
 ---
 
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+
 # Aim of the project
 
-Two datasets are available describing key parameters of baltic sea. Observational data is provided by the VOS Finnmaid, measuring (amongst others) pCO2, O2, Temperature and Salinity every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water. 
-The second dataset is modelled data providing information and values for all water depths and locations in the baltic sea. 
-The two datasets are to be compared with regards to their ability to describe primary production in the baltic sea and how close to each other measured and modelled data is.
+Two datasets are compared describing the sea surface temperature (SST) in the Central Baltic Sea. Observational data are provided by the VOS Finnmaid, measuring (amongst others) SST, pCO~2~, O~2~, and sea surface salinity (SSS) every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water (3m).
 
-The data is saved in the netcdf format. We describe how to read in the data, compare the relevant variables to finally viualize the relation between the two and to describe primary production in the Baltic Sea.
+The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. 
 
-The documnetation of the project is realized with `workflowr`, combining `R Markdown` with the version control Github as input for this webside. 
+Data are saved in the netcdf format. We describe how to read in the data, compare the relevant variables to finally visualize the relation between both SST estimates.
 
-# Read Finnmaid data
-
-The data from the VOS Finnmaid is read in from a netcdf file created by Bittig & Müller.
-
-The following packages are needed: 
+The documentation of the project is realized with `workflowr`, combining `R Markdown` with the version control Github as input for this webside. The following packages are needed.
 
 ```{r library, message=FALSE, warning=FALSE} 
 library(tidyverse)
@@ -30,58 +30,45 @@ library(lubridate)
 library(geosphere)
 ```
 
-To open a file in the netcdf format we use the openning function of the ncdf4 package. With the function `file.choose()` the file can be chosen from an explorer window, independent of the files location. Shown here are two examples how to open the file.
 
-```{r open1}
-nc <- nc_open(file.choose())
+# Definition of subsetting criteria
+
+```{r subsetting_criteria}
+
+select_route <- "E"
+low_lat <- 57.5
+high_lat <- 58.5
+var <- "SST"
+
 ```
 
-```{r open2, eval = FALSE, echo= FALSE}
+This analysis is performed for observation along the Finnmaid route `r select_route`, and in a first approach restricted to the daily mean values in the latitude range `r low_lat` - `r high_lat` deg N. The investigated variable is `r var`.
 
-#nc <- nc_open("GETM/Finnmaid", "FM_all_2019_on_standard_tracks.nc")
-```
 
-First of all, we want to get an overview of the file.
+# Prepare GETM data
 
-```{r test}
-print(nc)
-attributes(nc$var)
-attributes(nc$dim)
-```
+As a first step we want to prepare the data from the GETM model to compare it later.  We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the files in our modeldata set, that include the `pattern = "Finnmaid.E.2d"`. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting `recursive = TRUE`. 
 
-# Read GETM data
-
-Now the real work starts. We want to prepare the data from the model to compare it later. 
-We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the files in our modeldata set, that include the `pattern = "Finnmaid.E.2d"`.
-This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting `recursive = TRUE`. 
-
-```{r datapreparation, echo=FALSE}
+```{r file_list_GETM}
 
 filesList <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
 
 ```
 
-A few variable are to be specified for the following preparations.
 
-```{r variables}
+We now loop through all the files in `fileList` we created before, to perform the data preparations and save the new arrays.
+To open a file in the netcdf format we use the openning function of the `ncdf4` package.
 
-select_route <- "E"
-low_lat <- 57.5
-high_lat <- 58.5
-
-```
-
-We now loop through all the files in `fileList` we created before, to perform the data preparations and save the new arrays. 
-
-```{r loop, eval = FALSE, echo = FALSE}
+```{r read_GETM_data}
 
 for (n in 7:length(filesList)) {
 
+file <- filesList[8]
 file <- filesList[n]
 
 nc <- nc_open(paste("data/", file, sep = ""))
 
-lon <- ncvar_get(nc, "lonc")
+#lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
 
 time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
@@ -91,14 +78,11 @@ time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf f
 #t <- ymd_hms("2006-1-1 00:00:00") + ncvar_get(nc, "time")
 t <- time_units + ncvar_get(nc, "time")
 
-var <- "SST"
-
 array <- ncvar_get(nc, var) # store the data in a 3-dimensional array
 dim(array) # should be 2d with dimensions: 1575 coordinate, 31d*(24h/d/3h)=248 time steps
 
 array <- as.data.frame(t(array), xy=TRUE)
 array <- as_tibble(array)
-
 
 
 SST_GETM <- array %>%
@@ -113,27 +97,38 @@ SST_GETM <- array %>%
   mutate(var = var)
 
 
-write.csv(SST_GETM, file = paste("Finnmaid_E_2d_", n,".csv", sep = ""), row.names= F, quote = F)
+if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM)}
+        else {SST_GETM_whole <- SST_GETM}
 
 nc_close(nc)
-rm(array, var, nc, t, lat, lon, SST_GETM)
-
-
+rm(array, nc, t, lat, lon, SST_GETM)
 
 }
+
+# using tidyverse write_csv
+# write only one data file
+# use relative path with here package
+
+SST_GETM_whole %>% 
+  write_csv(here::here("data/_merged_data_files/", file = "GETM_SST_whole.csv"))
+
+rm(SST_GETM_whole, n, file, filesList, time_units)
+
 ```
 
 
 
-# Compare SST readings
+# Prepare Finnmaid data
 
-We want to compare the model data to the data actually measured by the VOS Finnmaid. Therefore, we need to prepare this data next.
+We want to compare the model data to the data actually measured by the VOS Finnmaid. Therefore, we need to prepare the Finnmaid data next.
 The file we open is called "FM_all_2019_on_standard_tracks.nc" and contains information for the time between 2003 and 2019 for route E.
+The data from the VOS Finnmaid are read in from a netcdf file created by Bittig & Müller.
 
-```{r finnmaid}
 
+```{r read_finnmaid_data, echo=T, results='hide'}
 
-nc <- nc_open(file.choose())
+#nc <- nc_open(file.choose())
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
 
 print(nc)
 attributes(nc$var)
@@ -190,17 +185,18 @@ timeseries_mean <- timeseries %>%
 #rm(array, temp, high_lat,low_lat, nc, slice, var, value)
 ```
 
-To compare it with the model data, we -- for now -- open an examplary data file, we prepared in the previous steps.
-Values are to be compared per day. Therefore, we need to calculate means per day before we continue. This is done on the example of the dataset "Finnmaid_E_2d_157.csv", that contains inforamtion for the whole year of 2006. 
 
-```{r dailymean}
+# Compare SST readings
+
+In the following we compare Finnmaid and GETM data. Values are to be compared per day. Therefore, we need to calculate means per day before we continue.
+
+
+```{r calculate_daily_mean}
+
 SST_GETM_whole <- {}
 SST_GETM_mean <- {}
-for (n in 7:157) {
- SST_GETM <- read.csv(paste("Finnmaid_E_2d_", n ,".csv", sep = ""))
- SST_GETM_whole <- rbind(SST_GETM_whole, SST_GETM)
- 
-}
+
+SST_GETM_whole <- read_csv(here::here("data/_merged_data_files/", file = "GETM_SST_whole.csv"))
 
 #SST_GETM <- read.csv("Finnmaid_E_2d_157.csv") #file nr 157 is the "GETM-test" dataset where data for a whole year was pooled
 #SST_GETM$date_time <- as.POSIXct(SST_GETM$date_time)
@@ -223,10 +219,9 @@ SST_GETM_mean$var <- "SST"
 
 ```
 
-Now we want to plot the SST against time for both timeseries: standard tracks of the VOS Finnmaid and the model data.
-Unfortunatly the VOS Finnmaid did not observer continously in 2006, which is why there is a lot of missing data in this example. 
+Now we want to plot the SST against time for both timeseries.
 
-```{r plottimeseries}
+```{r timeseries_plot}
 
 #if (exists("timeseries", inherits = FALSE)){
 #        timeseries <- bind_rows(timeseries, temp)
@@ -236,17 +231,21 @@ timeseries_mean <- timeseries_mean %>%
   mutate(date_time = as.POSIXct(date_time))
 
 timeseries_mean %>% 
-
   filter(date_time >= ymd_h("2003-01-01 T00"),
          date_time <= ymd_h("2018-12-31 T24")) %>%
   ggplot()+
   geom_line(aes(date_time, value_mean, col="Finnmaid"))+
   geom_point(aes(date_time, value_mean, col="Finnmaid"))+
   geom_line(data=SST_GETM_mean, aes(date_time, value, col="GETM"))+
-  labs(x="Date", y="SST (deg C)", title = paste("2006 | Finnmaid | Route E |",low_lat,"-",high_lat,"deg N"))+
-  scale_x_datetime(date_breaks = "1 months", date_labels = "%b")+
+  scale_color_brewer(palette = "Set1", name="")+
+  labs(x="Date", y="SST (deg C)", title = paste("Route ", select_route," |",low_lat,"-",high_lat,"deg N"))+
+  #scale_x_datetime(date_breaks = "1 months", date_labels = "%b")+
   theme_bw()
 
 ```
 
+
+# Open tasks
+
+* Check why first 6 GETM nc files do not open
 
