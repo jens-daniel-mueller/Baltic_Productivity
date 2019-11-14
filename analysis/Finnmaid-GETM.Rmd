@@ -219,9 +219,7 @@ SST_GETM_mean$var <- "SST"
 
 ```
 
-Now we want to plot the SST against time for both timeseries.
-
-```{r timeseries_plot}
+```{r timeseries_plot, eval=FALSE, include=FALSE}
 
 #if (exists("timeseries", inherits = FALSE)){
 #        timeseries <- bind_rows(timeseries, temp)
@@ -241,6 +239,37 @@ timeseries_mean %>%
   labs(x="Date", y="SST (deg C)", title = paste("Route ", select_route," |",low_lat,"-",high_lat,"deg N"))+
   #scale_x_datetime(date_breaks = "1 months", date_labels = "%b")+
   theme_bw()
+
+```
+
+Now we want to plot the SST against time for both timeseries.
+
+```{r timeseries_dygraph}
+
+library(dygraphs)
+library(xts)
+
+timeseries_mean <- timeseries_mean %>% 
+  mutate(date_time = as.POSIXct(date_time))
+
+# create xts object for dygraph plot
+
+ts <- full_join(SST_GETM_mean, timeseries_mean)
+
+ts <- ts %>% 
+  select(date_time, Finnmaid = value_mean, GETM=value)
+
+ts_xts <- xts(cbind(ts$Finnmaid, ts$GETM), order.by = ts$date_time)
+names(ts_xts) <- c("Finnmaid", "GETM")
+
+
+ts_xts %>% 
+  dygraph() %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("GETM") %>% 
+  dySeries("Finnmaid", color = "red") %>% 
+  dyAxis("y", label = "SST [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1)
 
 ```
 
