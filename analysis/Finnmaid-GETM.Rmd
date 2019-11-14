@@ -63,7 +63,7 @@ To open a file in the netcdf format we use the openning function of the `ncdf4` 
 
 for (n in 7:length(filesList)) {
 
-file <- filesList[8]
+#file <- filesList[8]
 file <- filesList[n]
 
 nc <- nc_open(paste("data/", file, sep = ""))
