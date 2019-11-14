@@ -110,7 +110,7 @@ rm(array, nc, t, lat, lon, SST_GETM)
 # use relative path with here package
 
 SST_GETM_whole %>% 
-  write_csv(here::here("data/_merged_data_files/", file = "GETM_SST_whole.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
 rm(SST_GETM_whole, n, file, filesList, time_units)
 
@@ -196,7 +196,7 @@ In the following we compare Finnmaid and GETM data. Values are to be compared pe
 SST_GETM_whole <- {}
 SST_GETM_mean <- {}
 
-SST_GETM_whole <- read_csv(here::here("data/_merged_data_files/", file = "GETM_SST_whole.csv"))
+SST_GETM_whole <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
 #SST_GETM <- read.csv("Finnmaid_E_2d_157.csv") #file nr 157 is the "GETM-test" dataset where data for a whole year was pooled
 #SST_GETM$date_time <- as.POSIXct(SST_GETM$date_time)
