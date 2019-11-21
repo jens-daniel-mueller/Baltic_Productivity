@@ -28,6 +28,7 @@ library(tidyverse)
 library(ncdf4)
 library(lubridate)
 library(geosphere)
+library(here)
 ```
 
 
@@ -127,6 +128,7 @@ The data from the VOS Finnmaid are read in from a netcdf file created by Bittig 
 
 ```{r read_finnmaid_data, echo=T, results='hide'}
 
+
 #nc <- nc_open(file.choose())
 nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
 
@@ -147,7 +149,7 @@ var <- "SST_east"
   
   fillvalue <- ncatt_get(nc, var, "_FillValue")
   array[array == fillvalue$value] <- NA
-  rm(fillvalue)
+  #rm(fillvalue)
   
   #i <- 5
   for (i in seq(1,length(route),1)){
@@ -156,16 +158,18 @@ var <- "SST_east"
       slice <- array[i,]
       
       value <- mean(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      sd    <- sd(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      min   <- min(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      max   <- max(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
       date <- ymd("2000-01-01") + date_time[i]
       
-      #timeseries <- bind_cols(date = date, var=var, value = value)
-      temp <- bind_cols(date = date, var=var, value = value)
+      temp <- bind_cols(date = date, var=var, value = value, sd = sd, min = min, max = max)
       
       if (exists("timeseries", inherits = FALSE)){
         timeseries <- bind_rows(timeseries, temp)
       } else{timeseries <- temp}
       
-      #rm(temp, value, date)
+      #rm(temp, value, date, sd, min, max)
       
     } 
   }
@@ -173,16 +177,13 @@ var <- "SST_east"
 nc_close(nc)
 #rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
 
-timeseries_mean <- timeseries %>% 
-  mutate(date_time = as.POSIXct(date)) %>% 
-#mean of transects from finnmaid (ID)
-  group_by(date_time) %>% 
-  summarise_all(list(~mean(.,na.rm = TRUE),
-                     ~min(., na.rm= TRUE),
-                     ~max(., na.rm= TRUE),
-                     ~sd(., na.rm = TRUE))) 
+timeseries <- timeseries %>% 
+  mutate(date_time = as.POSIXct(date))
 
-#rm(array, temp, high_lat,low_lat, nc, slice, var, value)
+timeseries %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole.csv"))
+
+rm(array, temp, high_lat,low_lat, nc, slice, var, value)
 ```
 
 
@@ -198,15 +199,9 @@ SST_GETM_mean <- {}
 
 SST_GETM_whole <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
-#SST_GETM <- read.csv("Finnmaid_E_2d_157.csv") #file nr 157 is the "GETM-test" dataset where data for a whole year was pooled
-#SST_GETM$date_time <- as.POSIXct(SST_GETM$date_time)
 
 SST_GETM_whole$date_time <- as.POSIXct(SST_GETM_whole$date_time)
 SST_GETM_whole$date_time <- round_date(SST_GETM_whole$date_time, unit = "day")
-
-#timeseries <- timeseries %>%
-#  mutate(date_time = as.POSIXct(date))
-
 
 SST_GETM_mean <- SST_GETM_whole %>% 
   group_by(date_time) %>% 
