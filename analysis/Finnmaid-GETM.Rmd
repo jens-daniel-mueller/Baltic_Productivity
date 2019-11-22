@@ -177,8 +177,13 @@ var <- "SST_east"
 nc_close(nc)
 #rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
 
+timeseries$date_time <- as.POSIXct(timeseries$date_time) %>% 
+  cut.POSIXt(breaks = "days") %>% 
+  round.POSIXt(units = "days") %>% 
+  as.POSIXct(tz = "UTC")
+
 timeseries <- timeseries %>% 
-  mutate(date_time = as.POSIXct(date))
+  select(-c(date))
 
 timeseries %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole.csv"))
@@ -210,7 +215,19 @@ SST_GETM_mean <- SST_GETM_whole %>%
 SST_GETM_mean$var <- "SST"
 
 
-#comparison <- cbind(timeseries_mean,SST_GETM_mean)
+#comparison 
+# write Finnmaid and GETM data into one array
+# variables: date_time, var, lat, value_Finn, value_GETM, sd_Finn, min_Finn, max_Finn
+# use full_join/semi_join/merge (?) function on dates, var to combine
+
+
+
+comparison <- full_join(timeseries, SST_GETM_mean, by = c("date_time", "var"))
+
+comparison %>% 
+  write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
+
+
 
 ```
 
