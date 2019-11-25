@@ -28,8 +28,12 @@ library(tidyverse)
 library(ncdf4)
 library(lubridate)
 library(geosphere)
+<<<<<<< HEAD
 library(dygraphs)
 library(xts)
+=======
+library(here)
+>>>>>>> cd15381445fd3facc989bb41c929d197e2ecbef5
 ```
 
 
@@ -129,8 +133,11 @@ The data from the VOS Finnmaid are read in from a netcdf file created by Bittig 
 
 ```{r read_finnmaid_data, echo=T, results='hide'}
 
+
 #nc <- nc_open(file.choose())
 nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+var <- "SST_east"
 
 print(nc)
 attributes(nc$var)
@@ -142,8 +149,6 @@ route <- unlist(strsplit(route, ""))
 date_time <- ncvar_get(nc, "time")
 latitude_east <- ncvar_get(nc, "latitude_east")
 
-var <- "SST_east"
-
   array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
   #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
   
@@ -153,21 +158,24 @@ var <- "SST_east"
   
   #i <- 5
   for (i in seq(1,length(route),1)){
-    
+  
+      
     if(route[i] == select_route) {
       slice <- array[i,]
       
       value <- mean(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      sd    <- sd(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      min   <- min(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      max   <- max(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
       date <- ymd("2000-01-01") + date_time[i]
       
-      #timeseries <- bind_cols(date = date, var=var, value = value)
-      temp <- bind_cols(date = date, var=var, value = value)
+      temp <- bind_cols(date = date, var=var, value = value, sd = sd, min = min, max = max)
       
       if (exists("timeseries", inherits = FALSE)){
         timeseries <- bind_rows(timeseries, temp)
       } else{timeseries <- temp}
       
-      #rm(temp, value, date)
+      #rm(temp, value, date, sd, min, max)
       
     } 
   }
@@ -175,16 +183,18 @@ var <- "SST_east"
 nc_close(nc)
 #rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
 
-timeseries_mean <- timeseries %>% 
-  mutate(date_time = as.POSIXct(date)) %>% 
-#mean of transects from finnmaid (ID)
-  group_by(date_time) %>% 
-  summarise_all(list(~mean(.,na.rm = TRUE),
-                     ~min(., na.rm= TRUE),
-                     ~max(., na.rm= TRUE),
-                     ~sd(., na.rm = TRUE))) 
+timeseries$date_time <- as.POSIXct(timeseries$date) %>% 
+  cut.POSIXt(breaks = "days") %>% 
+  round.POSIXt(units = "days") %>% 
+  as.POSIXct(tz = "UTC")
 
-#rm(array, temp, high_lat,low_lat, nc, slice, var, value)
+timeseries <- timeseries %>% 
+  select(-c(date))
+
+timeseries %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole.csv"))
+
+rm(array, temp, high_lat,low_lat, nc, slice, var, value)
 ```
 
 
@@ -195,20 +205,13 @@ In the following we compare Finnmaid and GETM data. Values are to be compared pe
 
 ```{r calculate_daily_mean}
 
-SST_GETM_whole <- {}
 SST_GETM_mean <- {}
 
 SST_GETM_whole <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
-#SST_GETM <- read.csv("Finnmaid_E_2d_157.csv") #file nr 157 is the "GETM-test" dataset where data for a whole year was pooled
-#SST_GETM$date_time <- as.POSIXct(SST_GETM$date_time)
 
 SST_GETM_whole$date_time <- as.POSIXct(SST_GETM_whole$date_time)
 SST_GETM_whole$date_time <- round_date(SST_GETM_whole$date_time, unit = "day")
-
-#timeseries <- timeseries %>%
-#  mutate(date_time = as.POSIXct(date))
-
 
 SST_GETM_mean <- SST_GETM_whole %>% 
   group_by(date_time) %>% 
@@ -217,30 +220,20 @@ SST_GETM_mean <- SST_GETM_whole %>%
 SST_GETM_mean$var <- "SST"
 
 
-#comparison <- cbind(timeseries_mean,SST_GETM_mean)
+#comparison 
+# write Finnmaid and GETM data into one array
+# use full_join/semi_join/merge (?) function on dates to combine
+# merge and inner_join tested, inner_join is running faster
+timeseries <- read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole.csv"))
 
-```
 
-```{r timeseries_plot, eval=FALSE, include=FALSE}
+comparison <- inner_join(timeseries, SST_GETM_mean, by = "date_time")
+comparison$difference <- abs(comparison$value.x - comparison$value.y) 
 
-#if (exists("timeseries", inherits = FALSE)){
-#        timeseries <- bind_rows(timeseries, temp)
-#} else{timeseries <- SST_GETM_mean}
+comparison %>% 
+  write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
 
-timeseries_mean <- timeseries_mean %>% 
-  mutate(date_time = as.POSIXct(date_time))
 
-timeseries_mean %>% 
-  filter(date_time >= ymd_h("2003-01-01 T00"),
-         date_time <= ymd_h("2018-12-31 T24")) %>%
-  ggplot()+
-  geom_line(aes(date_time, value_mean, col="Finnmaid"))+
-  geom_point(aes(date_time, value_mean, col="Finnmaid"))+
-  geom_line(data=SST_GETM_mean, aes(date_time, value, col="GETM"))+
-  scale_color_brewer(palette = "Set1", name="")+
-  labs(x="Date", y="SST (deg C)", title = paste("Route ", select_route," |",low_lat,"-",high_lat,"deg N"))+
-  #scale_x_datetime(date_breaks = "1 months", date_labels = "%b")+
-  theme_bw()
 
 ```
 
@@ -249,25 +242,32 @@ Now we want to plot the SST against time for both timeseries.
 ```{r timeseries_dygraph}
 
 
-timeseries_mean <- timeseries_mean %>% 
-  mutate(date_time = as.POSIXct(date_time))
+
 
 # create xts object for dygraph plot
 
-ts <- full_join(SST_GETM_mean, timeseries_mean)
+ts <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
 
 ts <- ts %>% 
-  select(date_time, Finnmaid = value_mean, GETM=value)
+  select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
 
 ts_xts <- xts(cbind(ts$Finnmaid, ts$GETM), order.by = ts$date_time)
 names(ts_xts) <- c("Finnmaid", "GETM")
-
+ts_dif_xts <- xts(ts$dif, order.by = ts$date_time)
+names(ts_dif_xts) <- "Difference"
 
 ts_xts %>% 
-  dygraph() %>% 
+  dygraph(group = "SST") %>% 
   dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
   dySeries("GETM") %>% 
   dySeries("Finnmaid", color = "red") %>% 
+  dyAxis("y", label = "SST [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1)
+
+ts_dif_xts %>% 
+  dygraph(group = "SST") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("Difference") %>% 
   dyAxis("y", label = "SST [deg C]") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 1)
 
