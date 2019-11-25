@@ -7,6 +7,7 @@
 <meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
 <meta name="author" content="Jens Daniel Müller &amp; Lara Burchardt" />
@@ -27,7 +28,7 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<script src="site_libs/htmlwidgets-1.3/htmlwidgets.js"></script>
+<script src="site_libs/htmlwidgets-1.5.1/htmlwidgets.js"></script>
 <link href="site_libs/dygraphs-1.1.1/dygraph.css" rel="stylesheet" />
 <script src="site_libs/dygraphs-1.1.1/dygraph-combined.js"></script>
 <script src="site_libs/dygraphs-1.1.1/shapes.js"></script>
@@ -98,7 +99,6 @@ code {
 }
 img {
   max-width:100%;
-  height: auto;
 }
 .tabbed-pane {
   padding-top: 12px;
@@ -259,56 +259,12 @@ $(document).ready(function () {
 }
 </style>
 
-<script>
-$(document).ready(function () {
-  window.buildTabsets("TOC");
-});
-
-$(document).ready(function () {
-  $('.tabset-dropdown > .nav-tabs > li').click(function () {
-    $(this).parent().toggleClass('nav-tabs-open')
-  });
-});
-</script>
-
 <!-- code folding -->
 <style type="text/css">
 .code-folding-btn { margin-bottom: 4px; }
 </style>
-<script>
-$(document).ready(function () {
-  window.initializeCodeFolding("hide" === "show");
-});
-</script>
 
 
-
-<script>
-$(document).ready(function ()  {
-
-    // move toc-ignore selectors from section div to header
-    $('div.section.toc-ignore')
-        .removeClass('toc-ignore')
-        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
-
-    // establish options
-    var options = {
-      selectors: "h1,h2,h3",
-      theme: "bootstrap3",
-      context: '.toc-content',
-      hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
-      },
-      ignoreSelector: ".toc-ignore",
-      scrollTo: 0
-    };
-    options.showAndHide = true;
-    options.smoothScroll = true;
-
-    // tocify
-    var toc = $("#TOC").tocify(options).data("toc-tocify");
-});
-</script>
 
 <style type="text/css">
 
@@ -322,6 +278,12 @@ $(document).ready(function ()  {
 }
 }
 
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
 
 .toc-content {
   padding-left: 30px;
@@ -448,14 +410,14 @@ div.section {
 
 <h1 class="title toc-ignore">Finnmaid-GETM</h1>
 <h4 class="author">Jens Daniel Müller &amp; Lara Burchardt</h4>
-<h4 class="date">22 November, 2019</h4>
+<h4 class="date">25 November, 2019</h4>
 
 </div>
 
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -464,7 +426,7 @@ div.section {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -473,17 +435,17 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2019-11-22
+<strong>Last updated:</strong> 2019-11-25
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
 </p>
 <p>
 <strong>Knit directory:</strong> <code>Baltic_Productivity/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
 </p>
 <p>
 This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
-  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.4.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.5.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
 </p>
 <hr>
 </div>
@@ -492,12 +454,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
 </div>
 </div>
 </div>
@@ -521,7 +483,7 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 </div>
 <div id="strongSeedstrongcodesetseed20191017code" class="panel-collapse collapse">
 <div class="panel-body">
-<p>The command <code>set.seed(20191017)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+<p>The command <code>set.seed(20191017)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
 </div>
 </div>
 </div>
@@ -564,17 +526,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<<<<<<< HEAD
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree2195e0720d309936011f71149dedfd8d7207404ftargetblank2195e07a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/2195e0720d309936011f71149dedfd8d7207404f" target="_blank">2195e07</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree64673e8fa3f3fb5623a7b4d0a8800964fe968187targetblank64673e8a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/64673e8fa3f3fb5623a7b4d0a8800964fe968187" target="_blank">64673e8</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree2195e0720d309936011f71149dedfd8d7207404ftargetblank2195e07a" class="panel-collapse collapse">
-=======
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree78e806bc811b614cdb2d01f1e5b2ec8048e6f270targetblank78e806ba"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/78e806bc811b614cdb2d01f1e5b2ec8048e6f270" target="_blank">78e806b</a> </a>
-</p>
-</div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree78e806bc811b614cdb2d01f1e5b2ec8048e6f270targetblank78e806ba" class="panel-collapse collapse">
->>>>>>> cd15381445fd3facc989bb41c929d197e2ecbef5
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree64673e8fa3f3fb5623a7b4d0a8800964fe968187targetblank64673e8a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -588,164 +543,6 @@ Ignored files:
     Ignored:    data/_merged_data_files/
     Ignored:    data/_summarized_data_files/
 
-Untracked files:
-    Untracked:  Finnmaid_E_2d_10.csv
-    Untracked:  Finnmaid_E_2d_100.csv
-    Untracked:  Finnmaid_E_2d_101.csv
-    Untracked:  Finnmaid_E_2d_102.csv
-    Untracked:  Finnmaid_E_2d_103.csv
-    Untracked:  Finnmaid_E_2d_104.csv
-    Untracked:  Finnmaid_E_2d_105.csv
-    Untracked:  Finnmaid_E_2d_106.csv
-    Untracked:  Finnmaid_E_2d_107.csv
-    Untracked:  Finnmaid_E_2d_108.csv
-    Untracked:  Finnmaid_E_2d_109.csv
-    Untracked:  Finnmaid_E_2d_11.csv
-    Untracked:  Finnmaid_E_2d_110.csv
-    Untracked:  Finnmaid_E_2d_111.csv
-    Untracked:  Finnmaid_E_2d_112.csv
-    Untracked:  Finnmaid_E_2d_113.csv
-    Untracked:  Finnmaid_E_2d_114.csv
-    Untracked:  Finnmaid_E_2d_115.csv
-    Untracked:  Finnmaid_E_2d_116.csv
-    Untracked:  Finnmaid_E_2d_117.csv
-    Untracked:  Finnmaid_E_2d_118.csv
-    Untracked:  Finnmaid_E_2d_119.csv
-    Untracked:  Finnmaid_E_2d_12.csv
-    Untracked:  Finnmaid_E_2d_120.csv
-    Untracked:  Finnmaid_E_2d_121.csv
-    Untracked:  Finnmaid_E_2d_122.csv
-    Untracked:  Finnmaid_E_2d_123.csv
-    Untracked:  Finnmaid_E_2d_124.csv
-    Untracked:  Finnmaid_E_2d_125.csv
-    Untracked:  Finnmaid_E_2d_126.csv
-    Untracked:  Finnmaid_E_2d_127.csv
-    Untracked:  Finnmaid_E_2d_128.csv
-    Untracked:  Finnmaid_E_2d_129.csv
-    Untracked:  Finnmaid_E_2d_13.csv
-    Untracked:  Finnmaid_E_2d_130.csv
-    Untracked:  Finnmaid_E_2d_131.csv
-    Untracked:  Finnmaid_E_2d_132.csv
-    Untracked:  Finnmaid_E_2d_133.csv
-    Untracked:  Finnmaid_E_2d_134.csv
-    Untracked:  Finnmaid_E_2d_135.csv
-    Untracked:  Finnmaid_E_2d_136.csv
-    Untracked:  Finnmaid_E_2d_137.csv
-    Untracked:  Finnmaid_E_2d_138.csv
-    Untracked:  Finnmaid_E_2d_139.csv
-    Untracked:  Finnmaid_E_2d_14.csv
-    Untracked:  Finnmaid_E_2d_140.csv
-    Untracked:  Finnmaid_E_2d_141.csv
-    Untracked:  Finnmaid_E_2d_142.csv
-    Untracked:  Finnmaid_E_2d_143.csv
-    Untracked:  Finnmaid_E_2d_144.csv
-    Untracked:  Finnmaid_E_2d_145.csv
-    Untracked:  Finnmaid_E_2d_146.csv
-    Untracked:  Finnmaid_E_2d_147.csv
-    Untracked:  Finnmaid_E_2d_148.csv
-    Untracked:  Finnmaid_E_2d_149.csv
-    Untracked:  Finnmaid_E_2d_15.csv
-    Untracked:  Finnmaid_E_2d_150.csv
-    Untracked:  Finnmaid_E_2d_151.csv
-    Untracked:  Finnmaid_E_2d_152.csv
-    Untracked:  Finnmaid_E_2d_153.csv
-    Untracked:  Finnmaid_E_2d_154.csv
-    Untracked:  Finnmaid_E_2d_155.csv
-    Untracked:  Finnmaid_E_2d_156.csv
-    Untracked:  Finnmaid_E_2d_157.csv
-    Untracked:  Finnmaid_E_2d_16.csv
-    Untracked:  Finnmaid_E_2d_17.csv
-    Untracked:  Finnmaid_E_2d_18.csv
-    Untracked:  Finnmaid_E_2d_19.csv
-    Untracked:  Finnmaid_E_2d_20.csv
-    Untracked:  Finnmaid_E_2d_21.csv
-    Untracked:  Finnmaid_E_2d_22.csv
-    Untracked:  Finnmaid_E_2d_23.csv
-    Untracked:  Finnmaid_E_2d_24.csv
-    Untracked:  Finnmaid_E_2d_25.csv
-    Untracked:  Finnmaid_E_2d_26.csv
-    Untracked:  Finnmaid_E_2d_27.csv
-    Untracked:  Finnmaid_E_2d_28.csv
-    Untracked:  Finnmaid_E_2d_29.csv
-    Untracked:  Finnmaid_E_2d_30.csv
-    Untracked:  Finnmaid_E_2d_31.csv
-    Untracked:  Finnmaid_E_2d_32.csv
-    Untracked:  Finnmaid_E_2d_33.csv
-    Untracked:  Finnmaid_E_2d_34.csv
-    Untracked:  Finnmaid_E_2d_35.csv
-    Untracked:  Finnmaid_E_2d_36.csv
-    Untracked:  Finnmaid_E_2d_37.csv
-    Untracked:  Finnmaid_E_2d_38.csv
-    Untracked:  Finnmaid_E_2d_39.csv
-    Untracked:  Finnmaid_E_2d_40.csv
-    Untracked:  Finnmaid_E_2d_41.csv
-    Untracked:  Finnmaid_E_2d_42.csv
-    Untracked:  Finnmaid_E_2d_43.csv
-    Untracked:  Finnmaid_E_2d_44.csv
-    Untracked:  Finnmaid_E_2d_45.csv
-    Untracked:  Finnmaid_E_2d_46.csv
-    Untracked:  Finnmaid_E_2d_47.csv
-    Untracked:  Finnmaid_E_2d_48.csv
-    Untracked:  Finnmaid_E_2d_49.csv
-    Untracked:  Finnmaid_E_2d_50.csv
-    Untracked:  Finnmaid_E_2d_51.csv
-    Untracked:  Finnmaid_E_2d_52.csv
-    Untracked:  Finnmaid_E_2d_53.csv
-    Untracked:  Finnmaid_E_2d_54.csv
-    Untracked:  Finnmaid_E_2d_55.csv
-    Untracked:  Finnmaid_E_2d_56.csv
-    Untracked:  Finnmaid_E_2d_57.csv
-    Untracked:  Finnmaid_E_2d_58.csv
-    Untracked:  Finnmaid_E_2d_59.csv
-    Untracked:  Finnmaid_E_2d_60.csv
-    Untracked:  Finnmaid_E_2d_61.csv
-    Untracked:  Finnmaid_E_2d_62.csv
-    Untracked:  Finnmaid_E_2d_63.csv
-    Untracked:  Finnmaid_E_2d_64.csv
-    Untracked:  Finnmaid_E_2d_65.csv
-    Untracked:  Finnmaid_E_2d_66.csv
-    Untracked:  Finnmaid_E_2d_67.csv
-    Untracked:  Finnmaid_E_2d_68.csv
-    Untracked:  Finnmaid_E_2d_69.csv
-    Untracked:  Finnmaid_E_2d_7.csv
-    Untracked:  Finnmaid_E_2d_70.csv
-    Untracked:  Finnmaid_E_2d_71.csv
-    Untracked:  Finnmaid_E_2d_72.csv
-    Untracked:  Finnmaid_E_2d_73.csv
-    Untracked:  Finnmaid_E_2d_74.csv
-    Untracked:  Finnmaid_E_2d_75.csv
-    Untracked:  Finnmaid_E_2d_76.csv
-    Untracked:  Finnmaid_E_2d_77.csv
-    Untracked:  Finnmaid_E_2d_78.csv
-    Untracked:  Finnmaid_E_2d_79.csv
-    Untracked:  Finnmaid_E_2d_8.csv
-    Untracked:  Finnmaid_E_2d_80.csv
-    Untracked:  Finnmaid_E_2d_81.csv
-    Untracked:  Finnmaid_E_2d_82.csv
-    Untracked:  Finnmaid_E_2d_83.csv
-    Untracked:  Finnmaid_E_2d_84.csv
-    Untracked:  Finnmaid_E_2d_85.csv
-    Untracked:  Finnmaid_E_2d_86.csv
-    Untracked:  Finnmaid_E_2d_87.csv
-    Untracked:  Finnmaid_E_2d_88.csv
-    Untracked:  Finnmaid_E_2d_89.csv
-    Untracked:  Finnmaid_E_2d_9.csv
-    Untracked:  Finnmaid_E_2d_90.csv
-    Untracked:  Finnmaid_E_2d_91.csv
-    Untracked:  Finnmaid_E_2d_92.csv
-    Untracked:  Finnmaid_E_2d_93.csv
-    Untracked:  Finnmaid_E_2d_94.csv
-    Untracked:  Finnmaid_E_2d_95.csv
-    Untracked:  Finnmaid_E_2d_96.csv
-    Untracked:  Finnmaid_E_2d_97.csv
-    Untracked:  Finnmaid_E_2d_98.csv
-    Untracked:  Finnmaid_E_2d_99.csv
-    Untracked:  GETM_test/
-    Untracked:  docs/figure/
-
-Unstaged changes:
-    Modified:   analysis/Finnmaid-GETM.Rmd
-
 </code></pre>
 <p>
 Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
@@ -757,337 +554,9 @@ Note that any generated files, e.g. HTML, png, CSS, etc., are not included in t
 <hr>
 </div>
 <div id="versions" class="tab-pane fade">
-
 <p>
-These are the previous versions of the R Markdown and HTML files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view them.
+There are no past versions. Publish this analysis with <code>wflow_publish()</code> to start tracking its development.
 </p>
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-File
-</th>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-<th>
-Message
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<<<<<<< HEAD
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/2195e0720d309936011f71149dedfd8d7207404f/analysis/Finnmaid-GETM.Rmd" target="_blank">2195e07</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-14
-</td>
-<td>
-Included dygraph
-=======
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/78e806bc811b614cdb2d01f1e5b2ec8048e6f270/analysis/Finnmaid-GETM.Rmd" target="_blank">78e806b</a>
-</td>
-<td>
-LSBurchardt
-</td>
-<td>
-2019-11-22
-</td>
-<td>
-#1 prepared for merging
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/b9d75c43e5e84abc45ac491833d556f223a0390d/analysis/Finnmaid-GETM.Rmd" target="_blank">b9d75c4</a>
-</td>
-<td>
-Burchardt
-</td>
-<td>
-2019-11-21
-</td>
-<td>
-#1 revised finnmaid data read-in, saved as summarized csv file, some cleaning
->>>>>>> cd15381445fd3facc989bb41c929d197e2ecbef5
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/165b6d96d875258c07a83b015e2d9b9d4f6e1a0d/docs/Finnmaid-GETM.html" target="_blank">165b6d9</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-14
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/eb75e041c57d04eacd90b1e1a19968cc875d219b/analysis/Finnmaid-GETM.Rmd" target="_blank">eb75e04</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-14
-</td>
-<td>
-Included dygraph
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/7e8cfa5969974e30756495a22cf2aeebcd49f323/docs/Finnmaid-GETM.html" target="_blank">7e8cfa5</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-14
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/9d29e106c36e23a19d88e1495c3d7eecfc77c58c/analysis/Finnmaid-GETM.Rmd" target="_blank">9d29e10</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-14
-</td>
-<td>
-Included dygraph
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/716d7b981dd397885f5cd20320774460a3b9124c/docs/Finnmaid-GETM.html" target="_blank">716d7b9</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-13
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/6f545ac85c2398a9d64db37245259744df0c1dbe/analysis/Finnmaid-GETM.Rmd" target="_blank">6f545ac</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-11-13
-</td>
-<td>
-Revised Laras first Finnmaid_GETM.Rmd
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/53e7f6e7af9c17b70ee9ad1776216eff75fa396e/analysis/Finnmaid-GETM.Rmd" target="_blank">53e7f6e</a>
-</td>
-<td>
-LSBurchardt
-</td>
-<td>
-2019-11-01
-</td>
-<td>
-wflow_git_commit(“analysis/Finnmaid-GETM.Rmd”)
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/c5bf4176fc5769481f933d2353455fcea8a9e63e/analysis/Finnmaid-GETM.Rmd" target="_blank">c5bf417</a>
-</td>
-<td>
-Burchardt
-</td>
-<td>
-2019-10-31
-</td>
-<td>
-# updates to be able to combine everything meaningfully, check dates, means are currently calculated monthly
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/9ba716206d39eddf854e33b859d14dbe2de5472f/analysis/Finnmaid-GETM.Rmd" target="_blank">9ba7162</a>
-</td>
-<td>
-Burchardt
-</td>
-<td>
-2019-10-25
-</td>
-<td>
-#1 code working in console, but not with wflow_build
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/1aee2f6b4e2c3e84b320813ed8ca87313a7a2c39/analysis/Finnmaid-GETM.Rmd" target="_blank">1aee2f6</a>
-</td>
-<td>
-Burchardt
-</td>
-<td>
-2019-10-25
-</td>
-<td>
-#1 transfer code to new workflowr project
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/d1026fb4025acac973a928edd72479e31c00b048/docs/Finnmaid-GETM.html" target="_blank">d1026fb</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-10-17
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/def23595a8b13016ed6504ef61368db80bd9faae/docs/Finnmaid-GETM.html" target="_blank">def2359</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-10-17
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/f92b0c25074a72d97aaedea6eadce7ec38892fe5/docs/Finnmaid-GETM.html" target="_blank">f92b0c2</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-10-17
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-html
-</td>
-<td>
-<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/fb91e8d1fa6bc78c1389034e6e2c597ef1c69291/docs/Finnmaid-GETM.html" target="_blank">fb91e8d</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-10-17
-</td>
-<td>
-Build site.
-</td>
-</tr>
-<tr>
-<td>
-Rmd
-</td>
-<td>
-<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/860e0fa12240988db3fb36c1807146e59730699b/analysis/Finnmaid-GETM.Rmd" target="_blank">860e0fa</a>
-</td>
-<td>
-jens-daniel-mueller
-</td>
-<td>
-2019-10-17
-</td>
-<td>
-finalized setup of repo
-</td>
-</tr>
-</tbody>
-</table>
-</div>
 <hr>
 </div>
 </div>
@@ -1102,6 +571,9 @@ finalized setup of repo
 library(ncdf4)
 library(lubridate)
 library(geosphere)
+
+library(dygraphs)
+library(xts)
 library(here)</code></pre>
 </div>
 <div id="definition-of-subsetting-criteria" class="section level1">
@@ -1114,7 +586,7 @@ var &lt;- &quot;SST&quot;</code></pre>
 </div>
 <div id="prepare-getm-data" class="section level1">
 <h1>Prepare GETM data</h1>
-<p>As a first step we want to prepare the data from the GETM model to compare it later. We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the files in our modeldata set, that include the <code>pattern = &quot;Finnmaid.E.2d&quot;</code>. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting <code>recursive = TRUE</code>.</p>
+<p>As a first step we want to prepare the data from the GETM model to compare it later. We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the files in our modeldata set, that include the <code>pattern = "Finnmaid.E.2d"</code>. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting <code>recursive = TRUE</code>.</p>
 <pre class="r"><code>filesList &lt;- list.files(path= &quot;data&quot;, pattern = &quot;Finnmaid.E.2d&quot;, recursive = TRUE)</code></pre>
 <p>We now loop through all the files in <code>fileList</code> we created before, to perform the data preparations and save the new arrays. To open a file in the netcdf format we use the openning function of the <code>ncdf4</code> package.</p>
 <pre class="r"><code>for (n in 7:length(filesList)) {
@@ -1238,9 +710,7 @@ rm(array, temp, high_lat,low_lat, nc, slice, var, value)</code></pre>
 <div id="compare-sst-readings" class="section level1">
 <h1>Compare SST readings</h1>
 <p>In the following we compare Finnmaid and GETM data. Values are to be compared per day. Therefore, we need to calculate means per day before we continue.</p>
-<pre class="r"><code>SST_GETM_mean &lt;- {}
-
-SST_GETM_whole &lt;- read_csv(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;GETM_SST_whole.csv&quot;))
+<pre class="r"><code>SST_GETM_whole &lt;- read_csv(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;GETM_SST_whole.csv&quot;))
 
 
 SST_GETM_whole$date_time &lt;- as.POSIXct(SST_GETM_whole$date_time)
@@ -1266,12 +736,7 @@ comparison$difference &lt;- abs(comparison$value.x - comparison$value.y)
 comparison %&gt;% 
   write_csv(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;Finnmaid_GETM_mean_SST_whole.csv&quot;))</code></pre>
 <p>Now we want to plot the SST against time for both timeseries.</p>
-<pre class="r"><code>library(dygraphs)
-library(xts)
-
-
-
-# create xts object for dygraph plot
+<pre class="r"><code># create xts object for dygraph plot
 
 ts &lt;- read_csv(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;Finnmaid_GETM_mean_SST_whole.csv&quot;))
 
@@ -1314,40 +779,49 @@ ts_xts %&gt;%
 </p>
 <div id="workflowr-sessioninfo" class="collapse">
 <pre class="r"><code>sessionInfo()</code></pre>
-<pre><code>R version 3.5.1 (2018-07-02)
+<pre><code>R version 3.5.0 (2018-04-23)
 Platform: x86_64-w64-mingw32/x64 (64-bit)
-Running under: Windows 10 x64 (build 18362)
+Running under: Windows 10 x64 (build 17763)
 
 Matrix products: default
 
 locale:
-[1] LC_COLLATE=German_Germany.1252  LC_CTYPE=German_Germany.1252   
-[3] LC_MONETARY=German_Germany.1252 LC_NUMERIC=C                   
-[5] LC_TIME=German_Germany.1252    
+[1] LC_COLLATE=English_United States.1252 
+[2] LC_CTYPE=English_United States.1252   
+[3] LC_MONETARY=English_United States.1252
+[4] LC_NUMERIC=C                          
+[5] LC_TIME=English_United States.1252    
 
 attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
- [1] xts_0.11-2       zoo_1.8-4        dygraphs_1.1.1.6 here_0.1        
- [5] geosphere_1.5-7  lubridate_1.7.4  ncdf4_1.16.1     forcats_0.4.0   
- [9] stringr_1.3.1    dplyr_0.8.1      purrr_0.2.5      readr_1.1.1     
-[13] tidyr_0.8.1      tibble_2.1.1     ggplot2_3.1.1    tidyverse_1.2.1 
+ [1] here_0.1         xts_0.11-2       zoo_1.8-6        dygraphs_1.1.1.6
+ [5] geosphere_1.5-10 lubridate_1.7.4  ncdf4_1.17       forcats_0.4.0   
+ [9] stringr_1.4.0    dplyr_0.8.3      purrr_0.3.3      readr_1.3.1     
+[13] tidyr_1.0.0      tibble_2.1.3     ggplot2_3.2.1    tidyverse_1.3.0 
 
 loaded via a namespace (and not attached):
- [1] tidyselect_0.2.5 xfun_0.7         haven_2.1.0      lattice_0.20-35 
- [5] colorspace_1.3-2 htmltools_0.3.6  yaml_2.2.0       rlang_0.3.4     
- [9] pillar_1.4.0     glue_1.3.1       withr_2.1.2      sp_1.3-1        
-[13] modelr_0.1.4     readxl_1.3.1     plyr_1.8.4       munsell_0.5.0   
-[17] gtable_0.2.0     workflowr_1.4.0  cellranger_1.1.0 rvest_0.3.4     
-[21] htmlwidgets_1.3  evaluate_0.14    knitr_1.23       broom_0.5.0     
-[25] Rcpp_1.0.1       scales_1.0.0     backports_1.1.2  jsonlite_1.6    
-[29] fs_1.2.6         hms_0.4.2        digest_0.6.18    stringi_1.2.4   
-[33] grid_3.5.1       rprojroot_1.3-2  cli_1.1.0        tools_3.5.1     
-[37] magrittr_1.5     lazyeval_0.2.1   crayon_1.3.4     whisker_0.3-2   
-[41] pkgconfig_2.0.2  xml2_1.2.0       assertthat_0.2.1 rmarkdown_1.13  
-[45] httr_1.3.1       rstudioapi_0.9.0 R6_2.4.0         nlme_3.1-137    
-[49] git2r_0.24.0     compiler_3.5.1  </code></pre>
+ [1] Rcpp_1.0.2        lattice_0.20-35   assertthat_0.2.1 
+ [4] zeallot_0.1.0     rprojroot_1.3-2   digest_0.6.22    
+ [7] R6_2.4.0          cellranger_1.1.0  backports_1.1.5  
+[10] reprex_0.3.0      evaluate_0.14     httr_1.4.1       
+[13] pillar_1.4.2      rlang_0.4.1       lazyeval_0.2.2   
+[16] readxl_1.3.1      rstudioapi_0.10   rmarkdown_1.17   
+[19] htmlwidgets_1.5.1 munsell_0.5.0     broom_0.5.2      
+[22] compiler_3.5.0    httpuv_1.5.2      modelr_0.1.5     
+[25] xfun_0.10         pkgconfig_2.0.3   htmltools_0.4.0  
+[28] tidyselect_0.2.5  workflowr_1.5.0   crayon_1.3.4     
+[31] dbplyr_1.4.2      withr_2.1.2       later_1.0.0      
+[34] grid_3.5.0        nlme_3.1-137      jsonlite_1.6     
+[37] gtable_0.3.0      lifecycle_0.1.0   DBI_1.0.0        
+[40] git2r_0.26.1      magrittr_1.5      scales_1.0.0     
+[43] cli_1.1.0         stringi_1.4.3     fs_1.3.1         
+[46] promises_1.1.0    sp_1.3-1          xml2_1.2.2       
+[49] generics_0.0.2    vctrs_0.2.0       tools_3.5.0      
+[52] glue_1.3.1        hms_0.5.2         yaml_2.2.0       
+[55] colorspace_1.4-1  rvest_0.3.5       knitr_1.25       
+[58] haven_2.2.0      </code></pre>
 </div>
 </div>
 
@@ -1381,6 +855,54 @@ $(document).ready(function () {
 });
 
 
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+<script>
+$(document).ready(function () {
+  window.initializeCodeFolding("hide" === "show");
+});
+</script>
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
 </script>
 
 <!-- dynamically load mathjax for compatibility with self-contained -->
