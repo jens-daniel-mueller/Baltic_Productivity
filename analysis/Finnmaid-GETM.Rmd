@@ -225,7 +225,7 @@ timeseries <- read_csv(here::here("data/_summarized_data_files/", file = "Finnma
 
 
 comparison <- inner_join(timeseries, SST_GETM_mean, by = "date_time")
-comparison$difference <- abs(comparison$value.x - comparison$value.y) 
+comparison$difference <- comparison$value.x - comparison$value.y 
 
 comparison %>% 
   write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
@@ -259,14 +259,15 @@ ts_xts %>%
   dySeries("GETM") %>% 
   dySeries("Finnmaid", color = "red") %>% 
   dyAxis("y", label = "SST [deg C]") %>% 
-  dyOptions(drawPoints = TRUE, pointSize = 1)
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
 
 ts_dif_xts %>% 
   dygraph(group = "SST") %>% 
   dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
   dySeries("Difference") %>% 
-  dyAxis("y", label = "SST [deg C]") %>% 
-  dyOptions(drawPoints = TRUE, pointSize = 1)
+  dyAxis("y", label = "delat SST [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
+            drawAxesAtZero=TRUE)
 
 ```
 
