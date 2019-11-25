@@ -234,7 +234,7 @@ comparison %>%
 
 ```
 
-Now we want to plot the SST against time for both timeseries.
+Now we plot the SST against time for both timeseries, as well as the difference between both SST timeseries.
 
 ```{r timeseries_dygraph}
 
