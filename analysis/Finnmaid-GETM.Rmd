@@ -28,12 +28,11 @@ library(tidyverse)
 library(ncdf4)
 library(lubridate)
 library(geosphere)
-<<<<<<< HEAD
+
 library(dygraphs)
 library(xts)
-=======
 library(here)
->>>>>>> cd15381445fd3facc989bb41c929d197e2ecbef5
+
 ```
 
 
@@ -65,7 +64,7 @@ filesList <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRU
 We now loop through all the files in `fileList` we created before, to perform the data preparations and save the new arrays.
 To open a file in the netcdf format we use the openning function of the `ncdf4` package.
 
-```{r read_GETM_data}
+```{r read_GETM_data, eval=FALSE}
 
 for (n in 7:length(filesList)) {
 
@@ -131,7 +130,7 @@ The file we open is called "FM_all_2019_on_standard_tracks.nc" and contains info
 The data from the VOS Finnmaid are read in from a netcdf file created by Bittig & Müller.
 
 
-```{r read_finnmaid_data, echo=T, results='hide'}
+```{r read_finnmaid_data, eval=FALSE}
 
 
 #nc <- nc_open(file.choose())
@@ -204,8 +203,6 @@ In the following we compare Finnmaid and GETM data. Values are to be compared pe
 
 
 ```{r calculate_daily_mean}
-
-SST_GETM_mean <- {}
 
 SST_GETM_whole <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
