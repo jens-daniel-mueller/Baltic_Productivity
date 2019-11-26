@@ -17,18 +17,18 @@ knitr::opts_chunk$set(warning=FALSE, message=FALSE)
 
 Two datasets are compared describing the sea surface temperature (SST) in the Central Baltic Sea. Observational data are provided by the VOS Finnmaid, measuring (amongst others) SST, pCO~2~, O~2~, and sea surface salinity (SSS) every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water (3m).
 
-The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. 
+The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. GETM results are available as 2d (surface values only, 3h resolution) and 3d (full water column data, 1day resolution) data files.
 
 Data are saved in the netcdf format. We describe how to read in the data, compare the relevant variables to finally visualize the relation between both SST estimates.
 
 The documentation of the project is realized with `workflowr`, combining `R Markdown` with the version control Github as input for this webside. The following packages are needed.
 
-```{r library, message=FALSE, warning=FALSE} 
+```{r library, message=FALSE, warning=FALSE}
+
 library(tidyverse)
 library(ncdf4)
 library(lubridate)
 library(geosphere)
-
 library(dygraphs)
 library(xts)
 library(here)
@@ -40,10 +40,20 @@ library(here)
 
 ```{r subsetting_criteria}
 
+# route
 select_route <- "E"
+
+# variable names in 2d and 3d GETM files
+var <- "SST"
+var_3d <- "temp"
+
+# latitude limits
 low_lat <- 57.5
 high_lat <- 58.5
-var <- "SST"
+
+# depth range to subset GETM 3d files
+d1_shallow <- 2
+d1_deep <- 4
 
 ```
 
@@ -52,26 +62,26 @@ This analysis is performed for observation along the Finnmaid route `r select_ro
 
 # Prepare GETM data
 
-As a first step we want to prepare the data from the GETM model to compare it later.  We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the files in our modeldata set, that include the `pattern = "Finnmaid.E.2d"`. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting `recursive = TRUE`. 
+As a first step we want to prepare the data from the GETM model to compare it later.  We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the 2d-files in our modeldata set, that include the `pattern = "Finnmaid.E.2d"`. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting `recursive = TRUE`. 
 
-```{r file_list_GETM}
+```{r file_list_GETM_2d, eval=FALSE}
 
-filesList <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
 
 ```
-
 
 We now loop through all the files in `fileList` we created before, to perform the data preparations and save the new arrays.
 To open a file in the netcdf format we use the openning function of the `ncdf4` package.
 
-```{r read_GETM_data, eval=FALSE}
+```{r read_GETM_data_2d, eval=FALSE}
 
-for (n in 7:length(filesList)) {
+for (n in 7:length(filesList_2d)) {
 
-#file <- filesList[8]
-file <- filesList[n]
+#file <- filesList_2d[8]
+file <- filesList_2d[n]
 
 nc <- nc_open(paste("data/", file, sep = ""))
+#print(nc)
 
 #lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
@@ -117,7 +127,92 @@ rm(array, nc, t, lat, lon, SST_GETM)
 SST_GETM_whole %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
-rm(SST_GETM_whole, n, file, filesList, time_units)
+rm(SST_GETM_whole, n, file, time_units)
+
+```
+
+
+In a similar fashion we loop through all 3d GETM data files, and extract the SST reading from 2-4 m water depth.
+
+```{r file_list_GETM_3d, eval=FALSE}
+
+filesList_3d <- list.files(path= "data", pattern = "Finnmaid.E.3d.z.nc", recursive = TRUE)
+
+```
+
+```{r read_GETM_data_3d, eval=FALSE}
+
+# read lat vector from 2d file
+file <- filesList_2d[8]
+nc <- nc_open(paste("data/", file, sep = ""))
+lat <- ncvar_get(nc, "latc", verbose = F)
+nc_close(nc)
+
+
+for (n in 7:length(filesList_3d)) {
+
+#file <- filesList_3d[8]
+file <- filesList_3d[n]
+
+nc <- nc_open(paste("data/", file, sep = ""))
+#print(nc)
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+
+t <- time_units + ncvar_get(nc, "time") # read time vector
+d <- ncvar_get(nc, "zax") # read depths vector
+
+array <- ncvar_get(nc, var_3d) # store the data in a 3-dimensional array
+#dim(array) # should be 3d with dimensions: 544 coordinates, 51 depths, and number of days of month
+
+fillvalue <- ncatt_get(nc, var_3d, "_FillValue")
+nc_close(nc)
+
+# Working with the data
+array[array == fillvalue$value] <- NA
+
+    for (i in seq(1,length(t),1)){
+      
+      #i <- 3
+      array_slice <- array[, , i] # slices data from one day
+      
+      array_slice_df <- as.data.frame(t(array_slice))
+      array_slice_df <- as_tibble(array_slice_df)
+      
+      SST_GETM_3d <- array_slice_df %>%
+        set_names(as.character(lat)) %>%
+        mutate(dep = -d) %>%
+        gather("lat", "value", 1:length(lat)) %>%
+        mutate(lat = as.numeric(lat)) %>%
+        filter(lat > low_lat, lat < high_lat,
+               dep >= d1_shallow, dep <= d1_deep) %>%
+        summarise_all("mean") %>%
+        mutate(var = var,
+               date_time=t[i]) %>% 
+        dplyr::select(date_time, -dep, lat, value, var)
+      
+      
+      if (exists("SST_GETM_whole_3d")) {SST_GETM_whole_3d <- bind_rows(SST_GETM_whole_3d, SST_GETM_3d)}
+              else {SST_GETM_whole_3d <- SST_GETM_3d}
+      
+      rm(array_slice, array_slice_df, SST_GETM_3d)
+      
+    }
+
+rm(nc, time_units, t, d, array, fillvalue)
+
+}
+
+# using tidyverse write_csv
+# write only one data file
+# use relative path with here package
+
+SST_GETM_whole_3d %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_3d.csv"))
+
+rm(SST_GETM_whole_3d, n, file, filesList_3d, filesList_2d)
 
 ```
 
@@ -131,7 +226,6 @@ The data from the VOS Finnmaid are read in from a netcdf file created by Bittig 
 
 
 ```{r read_finnmaid_data, eval=FALSE}
-
 
 #nc <- nc_open(file.choose())
 nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
@@ -202,12 +296,11 @@ rm(array, temp, high_lat,low_lat, nc, slice, var, value)
 In the following we compare Finnmaid and GETM data. Values are to be compared per day. Therefore, we need to calculate means per day before we continue.
 
 
-```{r calculate_daily_mean}
+```{r calculate_daily_mean, eval=FALSE}
 
 SST_GETM_whole <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
+SST_GETM_whole_3d <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_3d.csv"))
 
-
-SST_GETM_whole$date_time <- as.POSIXct(SST_GETM_whole$date_time)
 SST_GETM_whole$date_time <- round_date(SST_GETM_whole$date_time, unit = "day")
 
 SST_GETM_mean <- SST_GETM_whole %>% 
@@ -225,12 +318,17 @@ timeseries <- read_csv(here::here("data/_summarized_data_files/", file = "Finnma
 
 
 comparison <- inner_join(timeseries, SST_GETM_mean, by = "date_time")
-comparison$difference <- comparison$value.x - comparison$value.y 
+comparison <- comparison %>% 
+  select(date_time, Finnmaid_SST=value.x, GETM_SST=value.y)
+
+comparison <- inner_join(comparison, SST_GETM_whole_3d, by = "date_time")
+comparison <- comparison %>% 
+  select(date_time, Finnmaid_SST, GETM_SST, GETM_SST_3d=value)
+
+comparison$difference <- comparison$Finnmaid_SST - comparison$GETM_SST_3d
 
 comparison %>% 
   write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
-
-
 
 ```
 
@@ -245,18 +343,18 @@ Now we plot the SST against time for both timeseries, as well as the difference 
 
 ts <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
 
-ts <- ts %>% 
-  select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
+# ts <- ts %>% 
+#   select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
 
-ts_xts <- xts(cbind(ts$Finnmaid, ts$GETM), order.by = ts$date_time)
-names(ts_xts) <- c("Finnmaid", "GETM")
-ts_dif_xts <- xts(ts$dif, order.by = ts$date_time)
+ts_xts <- xts(cbind(ts$Finnmaid_SST, ts$GETM_SST, ts$GETM_SST_3d), order.by = ts$date_time)
+names(ts_xts) <- c("Finnmaid", "GETM_SST", "GETM_2-4m")
+ts_dif_xts <- xts(ts$difference, order.by = ts$date_time)
 names(ts_dif_xts) <- "Difference"
 
 ts_xts %>% 
   dygraph(group = "SST") %>% 
   dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
-  dySeries("GETM") %>% 
+  dySeries("GETM_SST") %>% 
   dySeries("Finnmaid", color = "red") %>% 
   dyAxis("y", label = "SST [deg C]") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
@@ -265,7 +363,7 @@ ts_dif_xts %>%
   dygraph(group = "SST") %>% 
   dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
   dySeries("Difference") %>% 
-  dyAxis("y", label = "delat SST [deg C]") %>% 
+  dyAxis("y", label = "delta SST (Finnmaid - GETM 2-4m) [deg C]") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
             drawAxesAtZero=TRUE)
 
