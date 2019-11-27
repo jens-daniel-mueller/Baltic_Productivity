@@ -242,8 +242,8 @@ route <- unlist(strsplit(route, ""))
 date_time <- ncvar_get(nc, "time")
 latitude_east <- ncvar_get(nc, "latitude_east")
 
-  array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
-  #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+#dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
   
   fillvalue <- ncatt_get(nc, var, "_FillValue")
   array[array == fillvalue$value] <- NA
@@ -272,21 +272,16 @@ latitude_east <- ncvar_get(nc, "latitude_east")
       
     } 
   }
-
 nc_close(nc)
 #rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
-
 timeseries$date_time <- as.POSIXct(timeseries$date) %>% 
   cut.POSIXt(breaks = "days") %>% 
   round.POSIXt(units = "days") %>% 
   as.POSIXct(tz = "UTC")
-
 timeseries <- timeseries %>% 
   select(-c(date))
-
 timeseries %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole.csv"))
-
 rm(array, temp, high_lat,low_lat, nc, slice, var, value)
 ```
 
@@ -369,6 +364,109 @@ ts_dif_xts %>%
 
 ```
 
+# Hovmoeller Plots
+```{r hovmoeller_2d_data_finnmaid}
+#Prepare data for Hovmoeller Plot
+#Rerun data preparation without lat and lon limits, save lon var as well
+
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+var <- "SST_east"
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+longitude_east <-ncvar_get(nc, "longitude_east")
+
+  array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+  #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+  #i <- 5
+  for (i in seq(1,length(route),1)){
+  
+      
+    if(route[i] == select_route) {
+      slice <- array[i,]
+      
+      value <- slice
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east)
+      temp$var <- var
+      temp$date <- date
+      
+      if (exists("timeseries", inherits = FALSE)){
+        timeseries <- bind_rows(timeseries, temp)
+      } else{timeseries <- temp}
+      
+      rm(temp, value, date)
+      
+    } 
+  }
+
+nc_close(nc)
+#rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
+
+timeseries$date_time <- as.POSIXct(timeseries$date) 
+
+timeseries %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
+
+rm(array, nc, slice, var)
+```
+
+```{r hovmoeller_2d_data_getm, eval= FALSE}
+#raster time
+
+    
+  #comparison$week <- as.Date(cut(comparison$date_time, breaks="weeks"))
+
+
+#raster lat 
+
+#comparison$dist.trav <- distGeo(cbind(sub.df.hov$Lon, sub.df.hov$Lat), trav) / 1e3
+    #sub.df.hov$dist.trav.int<-cut(sub.df.hov$dist.trav, seq(0, 1200, 50), labels =
+                                    #seq(25, 1175, 50))
+    #sub.df.hov$dist.trav.int<-as.numeric(as.character(sub.df.hov$dist.trav.int))
+# final data
+#hov_data %>% 
+      #dplyr::group_by(dist.trav.int, week) %>% 
+      #summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
+      #as.data.frame() 
+```
+
+```{r hovmoeller_2d_plot}
+# PLot
+hov1 <-
+      comparison %>% 
+      filter(!is.na(difference)) %>% 
+      ggplot()+
+      geom_raster(aes(week, dist.trav.int, fill= pCO2_mean))+
+      scale_fill_viridis_c(name="pCO2 [ppm]", direction = -1)+
+      geom_vline(xintercept = as.numeric(seq(as.POSIXct("2003/1/1", tz="GMT"), 
+                                             as.POSIXct("2018/1/1", tz="GMT"), 
+                                             "years")),
+                 size=1)+
+      scale_x_datetime(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )
+    
+    hov1
+
+```
 
 # Open tasks
 
