@@ -105,7 +105,7 @@ SST_GETM <- array %>%
   mutate(date_time = t) %>%
   gather("lat", "value", 1:length(lat)) %>%
   mutate(lat = as.numeric(lat)) %>%
-  filter(lat > low_lat, lat<high_lat) %>%
+  #filter(lat > low_lat, lat<high_lat) %>%
   group_by(date_time) %>%
   summarise_all("mean") %>%
   ungroup() %>%
@@ -393,15 +393,19 @@ date_time_o <- ncvar_get(nc, "otime_east")
   
       
     if(route[i] == select_route) {
-      slice <- array[i,]
-      date_o <- date_time_o[i,]
-      
+      slice <- array[i,]          #define slice of the data, per row (per measurment day)
       value <- slice
-      date <- ymd("2000-01-01") + date_time[i]
+      date <- as.Date(c(1:544))   # set up "date" variable to be overwritten later, needs to be "Date" object
       
-      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, date_time = date_o)
+      for (a in seq(1,length(latitude_east),1)){              # for slice i the corresponding 544 transect steps are  
+      temp_time <- ymd("2000-01-01") + date_time_o[i,a]       # adjoined by corresponding time ("otime_east")
+      date[a] <- temp_time
+      }
+      
+      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, date_time = date)
       temp$var <- var
-      temp$date <- date
+      temp$date_time <- as.POSIXct(temp$date_time)
+      #temp$date <- date
       
       
       if (exists("timeseries", inherits = FALSE)){
@@ -410,28 +414,99 @@ date_time_o <- ncvar_get(nc, "otime_east")
       
       rm(temp, value, date)
       
-    } 
-    for (a in 1:544){
-  timeseries$date_time_o[a] <- ymd("2000-01-01") + timeseries$date_time_o[a]
-  }
+      }
+    }
     
-  }
-  
-  
-  
- nc_close(nc)
-#rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
-
-timeseries$date_time <- as.POSIXct(timeseries$date) 
-timeseries$date_time_o <- as.POSIXct(timeseries$date_time_o)
+nc_close(nc)
 
 timeseries %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
 
-rm(array, nc, slice, var, date_time_o)
+#rm(array, nc, slice, var, date_time_o)
 ```
 
+
 ```{r hovmoeller_2d_data_getm, eval= FALSE}
+
+for (n in 7:length(filesList_2d)) {
+
+#file <- filesList_2d[8]
+file <- filesList_2d[n]
+var = "SST"
+nc <- nc_open(paste("data/", file, sep = ""))
+#print(nc)
+
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+
+t <- time_units + ncvar_get(nc, "time")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+dim(array) # should be 2d with dimensions: 544 coordinate, 31d*(24h/d/3h)=248 time steps
+
+array <- as.data.frame(t(array), xy=TRUE)
+array <- as_tibble(array)
+
+
+SST_GETM <- array %>%
+  set_names(as.character(lat)) %>%
+  mutate(date_time = t) %>%
+  gather("lat", "value", 1:length(lat)) %>%
+  mutate(lat = as.numeric(lat)) %>%
+  #filter(lat > low_lat, lat<high_lat) %>%
+  group_by(date_time) %>%
+  summarise_all("mean") %>%
+  ungroup() %>%
+  mutate(var = var)
+
+SST_GETM$lon <- lon
+
+for (m in seq(1, length(lat),1)){
+ 
+  value <- array[m,]
+  temp <- bind_cols(value = value, lon = lon, lat = lat)
+      temp$var <- var
+  
+}
+# mean per day, to then loop through coordinates`?
+# array_2$t <- cut.POSIXt(array_2$t,breaks =  "days")
+# array_mean <- array_2 %>% 
+#      group_by(t) %>% 
+#      summarise_all(list(~mean(.,na.rm = TRUE)))
+
+
+if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM)}
+        else {SST_GETM_whole <- SST_GETM}
+
+nc_close(nc)
+rm(array, nc, t, lat, lon, SST_GETM)
+
+}
+
+# using tidyverse write_csv
+# write only one data file
+# use relative path with here package
+
+SST_GETM_whole %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits.csv"))
+
+
+SST_GETM_mean <- SST_GETM_whole %>% 
+  group_by(date_time) %>% 
+  summarise_all(list(~mean(.,na.rm = TRUE)))
+
+SST_GETM_mean %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_mean_nolatlimits.csv"))
+
+rm(SST_GETM_whole, n, file, time_units)
+
+```
+
+```{r hovmoeller_2d_data_comparison, eval= FALSE}
 #raster time
 
     
