@@ -428,16 +428,29 @@ timeseries %>%
 
 ```{r hovmoeller_2d_data_getm, eval= FALSE}
 
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+
+file <- filesList_2d[8]
+nc <- nc_open(paste("data/", file, sep = ""))
+print(nc)
+
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+
+nc_close(nc)
+
+var = "SST"
+
+rm(file, nc)
+
 for (n in 7:length(filesList_2d)) {
 
 #file <- filesList_2d[8]
 file <- filesList_2d[n]
-var = "SST"
+
 nc <- nc_open(paste("data/", file, sep = ""))
 #print(nc)
-
-lon <- ncvar_get(nc, "lonc")
-lat <- ncvar_get(nc, "latc", verbose = F)
 
 time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
     substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
@@ -456,34 +469,27 @@ SST_GETM <- array %>%
   set_names(as.character(lat)) %>%
   mutate(date_time = t) %>%
   gather("lat", "value", 1:length(lat)) %>%
-  mutate(lat = as.numeric(lat)) %>%
-  #filter(lat > low_lat, lat<high_lat) %>%
-  group_by(date_time) %>%
+  mutate(lat = as.numeric(lat),
+         date = as.Date(date_time)) %>%
+  select(-date_time) %>% 
+  group_by(date, lat) %>%
   summarise_all("mean") %>%
-  ungroup() %>%
-  mutate(var = var)
+  ungroup() %>% 
+  rename(SST = value)
 
 SST_GETM$lon <- lon
-
-for (m in seq(1, length(lat),1)){
- 
-  value <- array[m,]
-  temp <- bind_cols(value = value, lon = lon, lat = lat)
-      temp$var <- var
-  
-}
-# mean per day, to then loop through coordinates`?
-# array_2$t <- cut.POSIXt(array_2$t,breaks =  "days")
-# array_mean <- array_2 %>% 
-#      group_by(t) %>% 
-#      summarise_all(list(~mean(.,na.rm = TRUE)))
+SST_GETM %>% 
+  ggplot(aes(lon, lat, col=SST))+
+  scale_color_viridis_c()+
+  geom_point()+
+  facet_wrap(~date)
 
 
 if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM)}
         else {SST_GETM_whole <- SST_GETM}
 
 nc_close(nc)
-rm(array, nc, t, lat, lon, SST_GETM)
+rm(array, nc, t, time_units, SST_GETM)
 
 }
 
@@ -495,14 +501,7 @@ SST_GETM_whole %>%
   write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits.csv"))
 
 
-SST_GETM_mean <- SST_GETM_whole %>% 
-  group_by(date_time) %>% 
-  summarise_all(list(~mean(.,na.rm = TRUE)))
-
-SST_GETM_mean %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_mean_nolatlimits.csv"))
-
-rm(SST_GETM_whole, n, file, time_units)
+rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d)
 
 ```
 
