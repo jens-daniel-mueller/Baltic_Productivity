@@ -388,36 +388,49 @@ date_time_o <- ncvar_get(nc, "otime_east")
   array[array == fillvalue$value] <- NA
   rm(fillvalue)
   
+  cor_vector <- c(1:544)
+  
   #i <- 5
+start <- Sys.time()
   for (i in seq(1,length(route),1)){
   
       
     if(route[i] == select_route) {
       slice <- array[i,]          #define slice of the data, per row (per measurment day)
       value <- slice
-      date <- as.Date(c(1:544))   # set up "date" variable to be overwritten later, needs to be "Date" object
+      date <- ymd("2000-01-01") + date_time[i]
       
-      for (a in seq(1,length(latitude_east),1)){              # for slice i the corresponding 544 transect steps are  
-      temp_time <- ymd("2000-01-01") + date_time_o[i,a]       # adjoined by corresponding time ("otime_east")
-      date[a] <- temp_time
-      }
+      #if detailed date/time information is needed: uncomment that
+      #date <- as.Date(c(1:544))   # set up "date" variable to be overwritten later, needs to be                                           "Date" object
+      #for (a in seq(1,length(latitude_east),1)){              # for slice i the corresponding 544                                                                   transect steps are  
+      #temp_time <- ymd("2000-01-01") + date_time_o[i,a]       # adjoined by corresponding time                                                                        ("otime_east")
+      #date[a] <- temp_time
+      #}
+    #temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, 
+    #corvector =   cor_vector, date_time = date)
+    #temp$date_time <- as.POSIXct(temp$date_time)
       
-      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, date_time = date)
-      temp$var <- var
-      temp$date_time <- as.POSIXct(temp$date_time)
-      #temp$date <- date
-      
+      #when detailed time/date information is needed, comment the following
+      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east,
+      corvector =  cor_vector)
+      temp$date <- date
+      # 
       
       if (exists("timeseries", inherits = FALSE)){
         timeseries <- bind_rows(timeseries, temp)
       } else{timeseries <- temp}
       
       rm(temp, value, date)
-      
-      }
     }
-    
+    print(i)
+    }
+#end <- Sys.time()
 nc_close(nc)
+
+
+timeseries <- timeseries %>% 
+  mutate(value_SST_Finn = value) %>% 
+  select(-c(value))
 
 timeseries %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
@@ -433,11 +446,11 @@ filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = 
 
 file <- filesList_2d[8]
 nc <- nc_open(paste("data/", file, sep = ""))
-print(nc)
+#print(nc)
 
 lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
-
+corvector <- c(1:544)
 nc_close(nc)
 
 var = "SST"
@@ -464,35 +477,51 @@ dim(array) # should be 2d with dimensions: 544 coordinate, 31d*(24h/d/3h)=248 ti
 array <- as.data.frame(t(array), xy=TRUE)
 array <- as_tibble(array)
 
-
-SST_GETM <- array %>%
-  set_names(as.character(lat)) %>%
+#use corvector (1:544)
+# this ends with corvector being NA, check tomorrow
+SST_GETM_corvector <- array %>%
+  set_names(as.character(corvector)) %>%
   mutate(date_time = t) %>%
-  gather("lat", "value", 1:length(lat)) %>%
-  mutate(lat = as.numeric(lat),
-         date = as.Date(date_time)) %>%
+  gather("corvector", "value", 1:length(corvector)) %>%
+  mutate(corvector = as.numeric(corvector),
+  date = as.Date(date_time)) %>%
   select(-date_time) %>% 
-  group_by(date, lat) %>%
+  group_by(date, corvecto) %>%
   summarise_all("mean") %>%
   ungroup() %>% 
   rename(SST = value)
 
-SST_GETM$lon <- lon
-SST_GETM %>% 
-  ggplot(aes(lon, lat, col=SST))+
-  scale_color_viridis_c()+
-  geom_point()+
-  facet_wrap(~date)
+# use lat and lon
+#SST_GETM_lat_lon <- array %>%
+#  set_names(as.character(lat)) %>%
+#  mutate(date_time = t) %>%
+#  gather("lat", "value", 1:length(lat)) %>%
+#  mutate(corvector = as.numeric(lat),
+#  date = as.Date(date_time)) %>%
+#  select(-date_time) %>% 
+#  group_by(date, lat) %>%
+#  summarise_all("mean") %>%
+#  ungroup() %>% 
+#  rename(SST = value)
+
+#SST_GETM$lon <- lon
+#SST_GETM %>% 
+#  ggplot(aes(lon, lat, col=SST))+
+#  scale_color_viridis_c()+
+#  geom_point()+
+#  facet_wrap(~date)
 
 
-if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM)}
-        else {SST_GETM_whole <- SST_GETM}
+if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM_corvector)}
+        else {SST_GETM_whole <- SST_GETM_corvector}
 
 nc_close(nc)
-rm(array, nc, t, time_units, SST_GETM)
+rm(array, nc, t, time_units, SST_GETM_corvector)
 
+print(n)
 }
 
+SST_GETM_corvector_whole <- SST_GETM_whole
 # using tidyverse write_csv
 # write only one data file
 # use relative path with here package
@@ -508,8 +537,20 @@ rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d)
 ```{r hovmoeller_2d_data_comparison, eval= FALSE}
 #raster time
 
-    
-  #comparison$week <- as.Date(cut(comparison$date_time, breaks="weeks"))
+SST_GETM <- 
+  read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits.csv"))
+SST_Finn <- 
+  read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
+
+SST_GETM <- SST_GETM %>% 
+  mutate(value_SST_GETM = SST) %>% 
+  select(-c(SST))
+
+
+SST_combined_GETM_Finn <-
+  inner_join(SST_Finn, SST_GETM, by = "date")
+  
+#comparison$week <- as.Date(cut(comparison$date_time, breaks="weeks"))
 
 
 #raster lat 
