@@ -486,7 +486,7 @@ SST_GETM_corvector <- array %>%
   mutate(corvector = as.numeric(corvector),
   date = as.Date(date_time)) %>%
   select(-date_time) %>% 
-  group_by(date, corvecto) %>%
+  group_by(date, corvector) %>%
   summarise_all("mean") %>%
   ungroup() %>% 
   rename(SST = value)
@@ -526,8 +526,8 @@ SST_GETM_corvector_whole <- SST_GETM_whole
 # write only one data file
 # use relative path with here package
 
-SST_GETM_whole %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits.csv"))
+SST_GETM_corvector_whole %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits_corvector.csv"))
 
 
 rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d)
@@ -538,7 +538,7 @@ rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d)
 #raster time
 
 SST_GETM <- 
-  read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits.csv"))
+  read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits_corvector.csv"))
 SST_Finn <- 
   read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
 
@@ -547,33 +547,37 @@ SST_GETM <- SST_GETM %>%
   select(-c(SST))
 
 
-SST_combined_GETM_Finn <-
-  inner_join(SST_Finn, SST_GETM, by = "date")
+SST_combined_GETM_Finn <-inner_join(SST_Finn, SST_GETM, by = c("date", "corvector"))
+SST_combined_GETM_Finn_dropNA <- drop_na(SST_combined_GETM_Finn)
+
+SST_combined_GETM_Finn %>% 
+  write_csv(here::here("data/_merged_data_files/", file = "SST_combined_GETM_Finn_corvector.csv"))
+SST_combined_GETM_Finn_dropNA %>% 
+  write_csv(here::here("data/_merged_data_files/", file = "SST_combined_GETM_Finn_corvector_dropNA.csv"))
   
-#comparison$week <- as.Date(cut(comparison$date_time, breaks="weeks"))
+
+comparison <- SST_combined_GETM_Finn_dropNA
+
+comparison$week <- as.Date(cut(comparison$date, breaks="weeks"))
+comparison$dist.trav <- comparison$corvector*2
+comparison$difference <- abs(comparison$value_SST_Finn-comparison$value_SST_GETM)
 
 
-#raster lat 
-
-#comparison$dist.trav <- distGeo(cbind(sub.df.hov$Lon, sub.df.hov$Lat), trav) / 1e3
-    #sub.df.hov$dist.trav.int<-cut(sub.df.hov$dist.trav, seq(0, 1200, 50), labels =
-                                    #seq(25, 1175, 50))
-    #sub.df.hov$dist.trav.int<-as.numeric(as.character(sub.df.hov$dist.trav.int))
 # final data
-#hov_data %>% 
-      #dplyr::group_by(dist.trav.int, week) %>% 
-      #summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
-      #as.data.frame() 
+comparison_hov_data <- comparison %>% 
+      dplyr::group_by(dist.trav, week) %>% 
+      summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
+      as.data.frame() 
 ```
 
 ```{r hovmoeller_2d_plot}
 # PLot
 hov1 <-
-      comparison %>% 
-      filter(!is.na(difference)) %>% 
+      comparison_hov_data %>% 
+      filter(!is.na(difference_mean)) %>% 
       ggplot()+
-      geom_raster(aes(week, dist.trav.int, fill= pCO2_mean))+
-      scale_fill_viridis_c(name="pCO2 [ppm]", direction = -1)+
+      geom_raster(aes(week, dist.trav, fill= difference_mean))+
+      scale_fill_viridis_c(name="mean difference", direction = -1)+
       geom_vline(xintercept = as.numeric(seq(as.POSIXct("2003/1/1", tz="GMT"), 
                                              as.POSIXct("2018/1/1", tz="GMT"), 
                                              "years")),
