@@ -127,7 +127,7 @@ rm(array, nc, t, lat, lon, SST_GETM)
 SST_GETM_whole %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole.csv"))
 
-rm(SST_GETM_whole, n, file, time_units)
+rm(SST_GETM_whole, n, file, time_units, var)
 
 ```
 
@@ -189,15 +189,16 @@ array[array == fillvalue$value] <- NA
         filter(lat > low_lat, lat < high_lat,
                dep >= d1_shallow, dep <= d1_deep) %>%
         summarise_all("mean") %>%
-        mutate(var = var,
+        mutate(var = var_3d,
                date_time=t[i]) %>% 
         dplyr::select(date_time, -dep, lat, value, var)
       
       
-      if (exists("SST_GETM_whole_3d")) {SST_GETM_whole_3d <- bind_rows(SST_GETM_whole_3d, SST_GETM_3d)}
-              else {SST_GETM_whole_3d <- SST_GETM_3d}
+      if (exists("SST_GETM_whole_3d")) {
+        SST_GETM_whole_3d <- bind_rows(SST_GETM_whole_3d, SST_GETM_3d)
+        } else {SST_GETM_whole_3d <- SST_GETM_3d}
       
-      rm(array_slice, array_slice_df, SST_GETM_3d)
+  rm(array_slice, array_slice_df, SST_GETM_3d)
       
     }
 
@@ -212,7 +213,7 @@ rm(nc, time_units, t, d, array, fillvalue)
 SST_GETM_whole_3d %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_3d.csv"))
 
-rm(SST_GETM_whole_3d, n, file, filesList_3d, filesList_2d)
+rm(SST_GETM_whole_3d, n, file, filesList_3d, filesList_2d, d1_deep,d1_shallow,var_3d,lat,i)
 
 ```
 
@@ -268,7 +269,7 @@ array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
         timeseries <- bind_rows(timeseries, temp)
       } else{timeseries <- temp}
       
-      #rm(temp, value, date, sd, min, max)
+      rm(temp, value, date, sd, min, max)
       
     } 
   }
@@ -282,7 +283,8 @@ timeseries <- timeseries %>%
   select(-c(date))
 timeseries %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole.csv"))
-rm(array, temp, high_lat,low_lat, nc, slice, var, value)
+
+rm(array, high_lat,low_lat, nc, slice, var, timeseries, latitude_east, date_time, route,i)
 ```
 
 
@@ -323,7 +325,9 @@ comparison <- comparison %>%
 comparison$difference <- comparison$Finnmaid_SST - comparison$GETM_SST_3d
 
 comparison %>% 
-  write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
+  write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_latrestriction.csv"))
+
+rm(comparison, SST_GETM_mean,SST_GETM_whole,SST_GETM_whole_3d,timeseries)
 
 ```
 
@@ -331,12 +335,9 @@ Now we plot the SST against time for both timeseries, as well as the difference 
 
 ```{r timeseries_dygraph}
 
-
-
-
 # create xts object for dygraph plot
 
-ts <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_whole.csv"))
+ts <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_latrestriction.csv"))
 
 # ts <- ts %>% 
 #   select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
@@ -362,10 +363,18 @@ ts_dif_xts %>%
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
             drawAxesAtZero=TRUE)
 
+rm(ts,ts_dif_xts,ts_xts)
+
 ```
 
 # Hovmoeller Plots
-```{r hovmoeller_2d_data_finnmaid}
+
+The previous steps have been performed on only a small coordinate space. Now we want to analyse the differences in SST readings through time and in relation to the distance to Travemuende [km]. 
+Again we prepare the data in a similar fashion as before, this time without coordinate restrictions.
+The route is divided in a 2km grid (startpoint: Travemuende). There are 544 coordinate points in every transect. Next to the exact longitute and latitute coordinates, the corresponding coordinate number (1:544) is added to the dataset. 
+
+
+```{r hovmoeller_2d_data_finnmaid, eval = FALSE}
 #Prepare data for Hovmoeller Plot
 #Rerun data preparation without lat and lon limits, save lon var as well
 
@@ -406,9 +415,9 @@ start <- Sys.time()
       #temp_time <- ymd("2000-01-01") + date_time_o[i,a]       # adjoined by corresponding time                                                                        ("otime_east")
       #date[a] <- temp_time
       #}
-    #temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, 
-    #corvector =   cor_vector, date_time = date)
-    #temp$date_time <- as.POSIXct(temp$date_time)
+      #temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, 
+      #corvector =   cor_vector, date_time = date)
+      #temp$date_time <- as.POSIXct(temp$date_time)
       
       #when detailed time/date information is needed, comment the following
       temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east,
@@ -423,7 +432,7 @@ start <- Sys.time()
       rm(temp, value, date)
     }
     print(i)
-    }
+  }
 #end <- Sys.time()
 nc_close(nc)
 
@@ -433,11 +442,12 @@ timeseries <- timeseries %>%
   select(-c(value))
 
 timeseries %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits_corvector.csv"))
 
-#rm(array, nc, slice, var, date_time_o)
+rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,longitude_east,route,i,start, timeseries)
 ```
 
+The GETM data is prepared without coordinate restrictions. We use the SST readings of the GETM model. 
 
 ```{r hovmoeller_2d_data_getm, eval= FALSE}
 
@@ -504,14 +514,6 @@ SST_GETM_corvector <- array %>%
 #  ungroup() %>% 
 #  rename(SST = value)
 
-#SST_GETM$lon <- lon
-#SST_GETM %>% 
-#  ggplot(aes(lon, lat, col=SST))+
-#  scale_color_viridis_c()+
-#  geom_point()+
-#  facet_wrap(~date)
-
-
 if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM_corvector)}
         else {SST_GETM_whole <- SST_GETM_corvector}
 
@@ -530,9 +532,12 @@ SST_GETM_corvector_whole %>%
   write_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits_corvector.csv"))
 
 
-rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d)
+rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d, SST_GETM_corvector_whole, corvector)
 
 ```
+
+To compare the datasets, we use the `inner_join` function from the tidyverse. All rows on x (SST Finnmaid values) with matching values in y (SST GETM values) are returned and all columns of x and y. We drop all rows containing NAs, break down the date information to weeks. The differences between SST readings of GETM and Finnmaid are calculated two ways: 1) allowing negative values and 2) as absolute values. 
+
 
 ```{r hovmoeller_2d_data_comparison, eval= FALSE}
 #raster time
@@ -540,7 +545,7 @@ rm(SST_GETM_whole, n, file, lon, lat, var, filesList_2d)
 SST_GETM <- 
   read_csv(here::here("data/_summarized_data_files/", file = "GETM_SST_whole_nolatlimits_corvector.csv"))
 SST_Finn <- 
-  read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits.csv"))
+  read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_SST_whole_nolatlimits_corvector.csv"))
 
 SST_GETM <- SST_GETM %>% 
   mutate(value_SST_GETM = SST) %>% 
@@ -560,24 +565,60 @@ comparison <- SST_combined_GETM_Finn_dropNA
 
 comparison$week <- as.Date(cut(comparison$date, breaks="weeks"))
 comparison$dist.trav <- comparison$corvector*2
-comparison$difference <- abs(comparison$value_SST_Finn-comparison$value_SST_GETM)
+comparison$difference_abs <- abs(comparison$value_SST_Finn-comparison$value_SST_GETM)
+comparison$difference <- comparison$value_SST_Finn-comparison$value_SST_GETM
 
 
-# final data
-comparison_hov_data <- comparison %>% 
+# final data for hovmoeller plots
+comparison_hov_data <- comparison %>%
+      select(value_SST_Finn, value_SST_GETM, difference, difference_abs,week, dist.trav) %>% 
       dplyr::group_by(dist.trav, week) %>% 
       summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
-      as.data.frame() 
+      as.data.frame()
+comparison_hov_data$week <- as.POSIXct(comparison_hov_data$week)
+
+comparison_hov_data %>% 
+  write_csv(here::here("data/_merged_data_files/", file = "SST_hovmoeller_GETM_Finn.csv"))
+
+rm(comparison,comparison_hov_data,SST_combined_GETM_Finn,SST_combined_GETM_Finn_dropNA,SST_Finn, SST_GETM)
 ```
 
+Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents the difference between SST GETM and Finnmaid values. In this plot we can see, whether the model produces higher differences in certain areas for example. 
+
 ```{r hovmoeller_2d_plot}
-# PLot
+# Hovmoeller Plot, difference SST Finn - SST GETM
+comparison_hov_data <-
+      read_csv(here::here("data/_merged_data_files/", file = "SST_hovmoeller_GETM_Finn.csv"))
+
 hov1 <-
       comparison_hov_data %>% 
       filter(!is.na(difference_mean)) %>% 
       ggplot()+
       geom_raster(aes(week, dist.trav, fill= difference_mean))+
-      scale_fill_viridis_c(name="mean difference", direction = -1)+
+      scale_fill_viridis_c(name="mean difference in SST [°C]", direction = -1)+
+      geom_vline(xintercept = as.numeric(seq(as.POSIXct("2003/1/1", tz="GMT"), 
+                                             as.POSIXct("2018/1/1", tz="GMT"), 
+                                             "years")),
+                 size=1)+
+      scale_x_datetime(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )
+hov1    
+#Hovmoeller Plot,absolute difference values SST
+hov2 <-
+    
+       comparison_hov_data %>% 
+      filter(!is.na(difference_abs_mean)) %>% 
+      ggplot()+
+      geom_raster(aes(week, dist.trav, fill= difference_abs_mean))+
+      scale_fill_viridis_c(name="absolute mean difference in SST [°C]", direction = -1)+
       geom_vline(xintercept = as.numeric(seq(as.POSIXct("2003/1/1", tz="GMT"), 
                                              as.POSIXct("2018/1/1", tz="GMT"), 
                                              "years")),
@@ -593,8 +634,10 @@ hov1 <-
         legend.key.height = unit(0.3, "cm")
       )
     
-    hov1
+hov2   
 
+
+rm(comparison_hov_data,hov1,hov2, select_route)
 ```
 
 # Open tasks
