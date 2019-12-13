@@ -699,6 +699,19 @@ comparison_hov_data %>%
 rm(comparison_hov_data, select_route)
 ```
 
+# pCO2 readings and mixed layer depths
+
+```{r mld-readings}
+
+var <- c("mld_age_1", "mld_age_3", "mld_age_5")
+
+for (a in 1:5){
+  out = knit_child('child_mld_GETM.Rmd')
+}
+
+```
+
+
 # Open tasks
 
 * Check why first 6 GETM nc files do not open
