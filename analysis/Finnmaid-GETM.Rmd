@@ -38,6 +38,7 @@ library(dygraphs)
 library(xts)
 library(here)
 library(metR)
+library(knitr)
 
 ```
 
@@ -703,14 +704,75 @@ rm(comparison_hov_data, select_route)
 
 ```{r mld-readings}
 
-var <- c("mld_age_1", "mld_age_3", "mld_age_5")
+var_all <- c("mld_age_1", "mld_age_3", "mld_age_5", "mld_rho", "mld_tke")
+out <- NULL
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
 
 for (a in 1:5){
-  out = knit_child('child_mld_GETM.Rmd')
+  
+var <- var_all[a]
+  for (n in 7:length(filesList_2d)) {
+
+  #file <- filesList_2d[8]
+  file <- filesList_2d[n]
+
+  nc <- nc_open(paste("data/", file, sep = ""))
+  #print(nc)
+
+  #lon <- ncvar_get(nc, "lonc")
+  lat <- ncvar_get(nc, "latc", verbose = F)
+
+  time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the    time 
+  substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+  ymd_hms()                           # and transform it to the right format
+
+  #t <- ymd_hms("2006-1-1 00:00:00") + ncvar_get(nc, "time")
+  t <- time_units + ncvar_get(nc, "time")
+
+  array <- ncvar_get(nc, var) # store the data in a 3-dimensional array
+  dim(array) # should be 2d with dimensions: 1575 coordinate, 31d*(24h/d/3h)=248 time steps
+
+  array <- as.data.frame(t(array), xy=TRUE)
+  array <- as_tibble(array)
+
+
+  SST_GETM <- array %>%
+    set_names(as.character(lat)) %>%
+    mutate(date_time = t) %>%
+    gather("lat", "value", 1:length(lat)) %>%
+    mutate(lat = as.numeric(lat)) %>%
+    #filter(lat > low_lat, lat<high_lat) %>%
+    group_by(date_time) %>%
+    summarise_all("mean") %>%
+    ungroup() %>%
+    mutate(var = var)
+
+
+  if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM)}
+        else {SST_GETM_whole <- SST_GETM}
+
+  nc_close(nc)
+  rm(array, nc, t, lat, SST_GETM)
+
+  print(n) # to see working progress
 }
 
-```
+# using tidyverse write_csv
+# write only one data file
+# use relative path with here package
 
+SST_GETM_whole %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole.csv")))
+
+print(paste("GETM_", var, "_whole.csv")) # to see working progress
+
+rm(SST_GETM_whole, n, file, time_units, var)
+}
+
+rm(a, filesList_2d, var_all)
+# if not working try with 'cat(paste(out, collapse = '\n'))'
+```
+`r paste(knit(out, collapse = "\n")`
 
 # Open tasks
 
