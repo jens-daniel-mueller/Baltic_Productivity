@@ -38,7 +38,6 @@ library(dygraphs)
 library(xts)
 library(here)
 library(metR)
-library(knitr)
 
 ```
 
@@ -701,6 +700,8 @@ rm(comparison_hov_data, select_route)
 ```
 
 # pCO2 readings and mixed layer depths
+## Mixed layer depths
+
 
 ```{r mld-readings}
 
@@ -762,17 +763,128 @@ var <- var_all[a]
 # use relative path with here package
 
 SST_GETM_whole %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole.csv")))
+  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole.csv", sep = "")))
 
-print(paste("GETM_", var, "_whole.csv")) # to see working progress
+print(paste("GETM_", var, "_whole.csv", sep = "")) # to see working progress
 
 rm(SST_GETM_whole, n, file, time_units, var)
 }
 
 rm(a, filesList_2d, var_all)
-# if not working try with 'cat(paste(out, collapse = '\n'))'
 ```
-`r paste(knit(out, collapse = "\n")`
+## pCO2 readings
+
+```{r finnmaid_pCO2, eval = FALSE}
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+var <- "pCO2_east"
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+#dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+  #i <- 5
+  for (i in seq(1,length(route),1)){
+  
+      
+    if(route[i] == select_route) {
+      slice <- array[i,]
+      
+      value <- mean(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      sd    <- sd(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      min   <- min(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      max   <- max(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      temp <- bind_cols(date = date, var=var, value = value, sd = sd, min = min, max = max)
+      
+      if (exists("timeseries", inherits = FALSE)){
+        timeseries <- bind_rows(timeseries, temp)
+      } else{timeseries <- temp}
+      
+      rm(temp, value, date, sd, min, max)
+      
+    } 
+  }
+nc_close(nc)
+#rm(list=setdiff(ls(), c("SST_GETM", "low_lat", "high_lat")))
+timeseries$date_time <- as.POSIXct(timeseries$date) %>% 
+  cut.POSIXt(breaks = "days") %>% 
+  round.POSIXt(units = "days") %>% 
+  as.POSIXct(tz = "UTC")
+timeseries <- timeseries %>% 
+  select(-c(date))
+timeseries %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_pCO2_whole.csv"))
+
+rm(array, high_lat,low_lat, nc, slice, var, timeseries, latitude_east, date_time, route,i)
+```
+## Data merging
+
+We want a datafile including the pCO2 values, as measured from the Finnmaid, as well as all five mixed layer depth parameters. For the pCO2 values, we want the corresponding minimum, maximum and standard deviation values per date. 
+
+```{r merging_mld_pco2, eval= TRUE}
+
+## change pco2 reading to without lat restrictions but write lat & lon or coordinat vector as well
+## combine all, in plot filter for the lat restrictions, that we way we can save one round of data prep
+ts_pCO2 <- read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_pCO2_whole.csv"))
+ts_mld_age_1 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_1_whole.csv"))
+ts_mld_age_3 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_3_whole.csv"))
+ts_mld_age_5 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_5_whole.csv"))
+ts_mld_rho <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_rho_whole.csv"))
+ts_mld_tke <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_tke_whole.csv"))
+
+ts_pCO2 <- ts_pCO2 %>% 
+  transmute( value_pCO2 = value, sd_pCO2 = sd, min_pCO2 = min, max_pCO2 = max, date = date_time)
+ts_mld_age_1 <- ts_mld_age_1 %>% 
+  transmute( value_mld1 = value)
+
+
+
+```
+
+## Timeseries plots
+
+```{r timeseries pCO2 dygraphs}
+
+ts_pCO2_mld <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestriction.csv"))
+
+# ts <- ts %>% 
+#   select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
+
+ts_xts <- xts(cbind(ts$Finnmaid_SST, ts$GETM_SST, ts$GETM_SST_3d), order.by = ts$date_time)
+names(ts_xts) <- c("Finnmaid", "GETM_SST", "GETM_2-4m")
+ts_dif_xts <- xts(ts$difference, order.by = ts$date_time)
+names(ts_dif_xts) <- "Difference"
+
+ts_xts %>% 
+  dygraph(group = "SST") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("GETM_SST") %>% 
+  dySeries("Finnmaid", color = "red") %>% 
+  dyAxis("y", label = "SST [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
+
+ts_dif_xts %>% 
+  dygraph(group = "SST") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("Difference") %>% 
+  dyAxis("y", label = "delta SST (Finnmaid - GETM 2-4m) [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
+            drawAxesAtZero=TRUE)
+
+rm(ts,ts_dif_xts,ts_xts)
+
+```
 
 # Open tasks
 
