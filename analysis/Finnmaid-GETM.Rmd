@@ -706,14 +706,13 @@ rm(comparison_hov_data, select_route)
 ```{r mld-readings}
 
 var_all <- c("mld_age_1", "mld_age_3", "mld_age_5", "mld_rho", "mld_tke")
-out <- NULL
+
 filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
 
 for (a in 1:5){
   
 var <- var_all[a]
   for (n in 7:length(filesList_2d)) {
-
   #file <- filesList_2d[8]
   file <- filesList_2d[n]
 
@@ -737,38 +736,36 @@ var <- var_all[a]
   array <- as_tibble(array)
 
 
-  SST_GETM <- array %>%
+  mld_GETM <- array %>%
     set_names(as.character(lat)) %>%
     mutate(date_time = t) %>%
     gather("lat", "value", 1:length(lat)) %>%
     mutate(lat = as.numeric(lat)) %>%
+    #comment the following line to get dataset without lat restrictions
     #filter(lat > low_lat, lat<high_lat) %>%
-    group_by(date_time) %>%
-    summarise_all("mean") %>%
-    ungroup() %>%
-    mutate(var = var)
+    group_by(date_time,lat) %>%
+    summarise_all("mean")
+   
 
 
-  if (exists("SST_GETM_whole")) {SST_GETM_whole <- bind_rows(SST_GETM_whole, SST_GETM)}
-        else {SST_GETM_whole <- SST_GETM}
+  if (exists("mld_GETM_whole")) {mld_GETM_whole <- bind_rows(mld_GETM_whole, mld_GETM)
+  }else {mld_GETM_whole <- mld_GETM}
 
   nc_close(nc)
-  rm(array, nc, t, lat, SST_GETM)
-
+  rm(array, nc, t, lat, mld_GETM)
   print(n) # to see working progress
+}
+
+print(paste("GETM_", var, "_whole.csv", sep = "")) # to see working progress
+mld_GETM_whole %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole.csv", sep = "")))
+rm(mld_GETM_whole, n, file, time_units, var)
 }
 
 # using tidyverse write_csv
 # write only one data file
 # use relative path with here package
 
-SST_GETM_whole %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole.csv", sep = "")))
-
-print(paste("GETM_", var, "_whole.csv", sep = "")) # to see working progress
-
-rm(SST_GETM_whole, n, file, time_units, var)
-}
 
 rm(a, filesList_2d, var_all)
 ```
@@ -843,10 +840,20 @@ ts_mld_age_5 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM
 ts_mld_rho <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_rho_whole.csv"))
 ts_mld_tke <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_tke_whole.csv"))
 
+
 ts_pCO2 <- ts_pCO2 %>% 
   transmute( value_pCO2 = value, sd_pCO2 = sd, min_pCO2 = min, max_pCO2 = max, date = date_time)
-ts_mld_age_1 <- ts_mld_age_1 %>% 
-  transmute( value_mld1 = value)
+
+# try again with lat restrictions in getm? for now this is a different summarisation functionality than
+# then mean will work like we want, now lat gets averaged which doesn't make any sense
+ts_mld_age_1 <- ts_mld_age_1 %>%
+  mutate(date = as.Date(date_time)) %>%
+  select(-date_time) %>%
+  filter(lat > low_lat, lat<high_lat) %>%
+  group_by(date, lat) %>% 
+  summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>%
+  transmute(value_mld1 = mean, date = date, lat = lat)
 
 
 
