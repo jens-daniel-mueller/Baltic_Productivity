@@ -345,7 +345,7 @@ rm(comparison, SST_GETM_mean,SST_GETM_whole,SST_GETM_whole_3d,timeseries)
 
 Now we plot the SST against time for both timeseries, as well as the difference between both SST timeseries.
 
-```{r timeseries_dygraph, fig.asp=0.6}
+```{r timeseries_dygraph, fig.asp=0.5}
 
 # create xts object for dygraph plot
 
@@ -952,7 +952,7 @@ write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_
 
 ## Timeseries plots
 
-```{r timeseries_pCO2_dygraphs}
+```{r timeseries_pCO2_dygraphs, fig.asp=0.5}
 
 ts_mld_pco2 <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestrictions.csv"))
 
