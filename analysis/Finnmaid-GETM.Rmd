@@ -702,72 +702,84 @@ rm(comparison_hov_data, select_route)
 # pCO2 readings and mixed layer depths
 ## Mixed layer depths
 
-
-```{r mld-readings}
-
+```{r mld_readings_2}
 var_all <- c("mld_age_1", "mld_age_3", "mld_age_5", "mld_rho", "mld_tke")
 
 filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
 
+file <- filesList_2d[8]
+nc <- nc_open(paste("data/", file, sep = ""))
+#print(nc)
+
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+corvector <- c(1:544)
+nc_close(nc)
+
+rm(file, nc)
+
 for (a in 1:5){
-  
-var <- var_all[a]
-  for (n in 7:length(filesList_2d)) {
-  #file <- filesList_2d[8]
-  file <- filesList_2d[n]
 
-  nc <- nc_open(paste("data/", file, sep = ""))
-  #print(nc)
-
-  #lon <- ncvar_get(nc, "lonc")
-  lat <- ncvar_get(nc, "latc", verbose = F)
-
-  time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the    time 
-  substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
-  ymd_hms()                           # and transform it to the right format
-
-  #t <- ymd_hms("2006-1-1 00:00:00") + ncvar_get(nc, "time")
-  t <- time_units + ncvar_get(nc, "time")
-
-  array <- ncvar_get(nc, var) # store the data in a 3-dimensional array
-  dim(array) # should be 2d with dimensions: 1575 coordinate, 31d*(24h/d/3h)=248 time steps
-
-  array <- as.data.frame(t(array), xy=TRUE)
-  array <- as_tibble(array)
+  var <- var_all[a]
 
 
-  mld_GETM <- array %>%
-    set_names(as.character(lat)) %>%
-    mutate(date_time = t) %>%
-    gather("lat", "value", 1:length(lat)) %>%
-    mutate(lat = as.numeric(lat)) %>%
-    #comment the following line to get dataset without lat restrictions
-    #filter(lat > low_lat, lat<high_lat) %>%
-    group_by(date_time,lat) %>%
-    summarise_all("mean")
-   
+for (n in 7:length(filesList_2d)) {
+
+#file <- filesList_2d[8]
+file <- filesList_2d[n]
+
+nc <- nc_open(paste("data/", file, sep = ""))
+#print(nc)
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+
+t <- time_units + ncvar_get(nc, "time")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+dim(array) # should be 2d with dimensions: 544 coordinate, 31d*(24h/d/3h)=248 time steps
+
+array <- as.data.frame(t(array), xy=TRUE)
+array <- as_tibble(array)
+
+#use corvector (1:544)
+mld_GETM_corvector <- array %>%
+  set_names(as.character(corvector)) %>%
+  mutate(date_time = t) %>%
+  gather("corvector", "value", 1:length(corvector)) %>%
+  mutate(corvector = as.numeric(corvector),
+  date = as.Date(date_time)) %>%
+  select(-date_time) %>% 
+  group_by(date, corvector) %>%
+  summarise_all("mean") %>%
+  ungroup() %>% 
+  rename(mld = value)
 
 
-  if (exists("mld_GETM_whole")) {mld_GETM_whole <- bind_rows(mld_GETM_whole, mld_GETM)
-  }else {mld_GETM_whole <- mld_GETM}
+if (exists("mld_GETM_whole")) {mld_GETM_whole <- bind_rows(mld_GETM_whole, mld_GETM_corvector)
+  }else {mld_GETM_whole <- mld_GETM_corvector}
 
   nc_close(nc)
-  rm(array, nc, t, lat, mld_GETM)
+  rm(array, nc, t, mld_GETM_corvector)
   print(n) # to see working progress
 }
 
 print(paste("GETM_", var, "_whole.csv", sep = "")) # to see working progress
-mld_GETM_whole %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole.csv", sep = "")))
-rm(mld_GETM_whole, n, file, time_units, var)
-}
 
 # using tidyverse write_csv
 # write only one data file
 # use relative path with here package
 
+mld_GETM_whole %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = paste("GETM_", var, "_whole_corvector.csv", sep = "")))
+rm(mld_GETM_whole, n, file, time_units, var)
+}
 
-rm(a, filesList_2d, var_all)
+
+
+
+rm(a, filesList_2d, var_all, lat, lon)
 ```
 ## pCO2 readings
 
@@ -834,27 +846,75 @@ We want a datafile including the pCO2 values, as measured from the Finnmaid, as 
 ## change pco2 reading to without lat restrictions but write lat & lon or coordinat vector as well
 ## combine all, in plot filter for the lat restrictions, that we way we can save one round of data prep
 ts_pCO2 <- read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_pCO2_whole.csv"))
-ts_mld_age_1 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_1_whole.csv"))
-ts_mld_age_3 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_3_whole.csv"))
-ts_mld_age_5 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_5_whole.csv"))
-ts_mld_rho <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_rho_whole.csv"))
-ts_mld_tke <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_tke_whole.csv"))
+ts_mld_age_1 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_1_whole_corvector.csv"))
+ts_mld_age_3 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_3_whole_corvector.csv"))
+ts_mld_age_5 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_age_5_whole_corvector.csv"))
+ts_mld_rho <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_rho_whole_corvector.csv"))
+ts_mld_tke <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_tke_whole_corvector.csv"))
 
-
+#pCO2 Finnmaid
 ts_pCO2 <- ts_pCO2 %>% 
   transmute( value_pCO2 = value, sd_pCO2 = sd, min_pCO2 = min, max_pCO2 = max, date = date_time)
 
-# try again with lat restrictions in getm? for now this is a different summarisation functionality than
-# then mean will work like we want, now lat gets averaged which doesn't make any sense
-ts_mld_age_1 <- ts_mld_age_1 %>%
-  mutate(date = as.Date(date_time)) %>%
-  select(-date_time) %>%
-  filter(lat > low_lat, lat<high_lat) %>%
-  group_by(date, lat) %>% 
-  summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>%
-  transmute(value_mld1 = mean, date = date, lat = lat)
+#cor_space, which corvector entries belong to lat restrictions
+# if no lat restrictions, comment out the following 4 lines or set them such, that they don't actually restrict
+cor_space_restriction <- cor_space %>% 
+  filter(lat > low_lat, lat<high_lat)
+low_cor <- min(cor_space_restriction$corvector)
+high_cor <- max(cor_space_restriction$corvector)
 
+#mld_age_1
+ts_mld_age_1 <- ts_mld_age_1 %>%
+  filter(corvector > low_cor, corvector<high_cor) %>%
+  group_by(date) %>% 
+  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>%
+  transmute( date = date, corvector = corvector_value, value_mld1 = mld_value)
+#mld_age_3
+ts_mld_age_3 <- ts_mld_age_3 %>%
+  filter(corvector > low_cor, corvector<high_cor) %>%
+  group_by(date) %>% 
+  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>%
+  transmute( date = date, corvector = corvector_value, value_mld3 = mld_value)
+#mld_age_5
+ts_mld_age_5 <- ts_mld_age_5 %>%
+  filter(corvector > low_cor, corvector<high_cor) %>%
+  group_by(date) %>% 
+  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>%
+  transmute( date = date, corvector = corvector_value, value_mld5 = mld_value)
+#mld_rho
+ts_mld_rho <- ts_mld_rho %>%
+  filter(corvector > low_cor, corvector<high_cor) %>%
+  group_by(date) %>% 
+  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>%
+  transmute( date = date, corvector = corvector_value, value_mldrho = mld_value)
+#mld_tke
+ts_mld_tke <- ts_mld_tke %>%
+  filter(corvector > low_cor, corvector<high_cor) %>%
+  group_by(date) %>% 
+  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>%
+  transmute( date = date, corvector = corvector_value, value_mldtke = mld_value)
+
+
+ts_mld <- bind_cols(ts_mld_age_1, ts_mld_age_3, ts_mld_age_5, ts_mld_rho, ts_mld_tke)
+ts_mld <- ts_mld %>% 
+  select(date, corvector, value_mld1, value_mld3, value_mld5, value_mldrho, value_mldtke) %>% 
+  mutate(date = as.POSIXct(date)) 
+
+ts_mld$date <- ts_mld$date %>% 
+  cut.POSIXt(breaks = "days") %>% 
+  round.POSIXt(units = "days") %>% 
+  as.POSIXct(tz = "UTC")
+
+ts_mld_pco2_full <- full_join(ts_pCO2, ts_mld, by = "date")
+#ts_mld_pco2_inner <- inner_join(ts_pCO2, ts_mld, by = "date")
+
+ts_mld_pco2_full %>% 
+write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestrictions.csv"))
 
 
 ```
@@ -863,29 +923,30 @@ ts_mld_age_1 <- ts_mld_age_1 %>%
 
 ```{r timeseries pCO2 dygraphs}
 
-ts_pCO2_mld <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestriction.csv"))
+ts_mld_pco2 <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestriction.csv"))
 
 # ts <- ts %>% 
 #   select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
 
-ts_xts <- xts(cbind(ts$Finnmaid_SST, ts$GETM_SST, ts$GETM_SST_3d), order.by = ts$date_time)
-names(ts_xts) <- c("Finnmaid", "GETM_SST", "GETM_2-4m")
-ts_dif_xts <- xts(ts$difference, order.by = ts$date_time)
-names(ts_dif_xts) <- "Difference"
+ts_xts <- xts(cbind(ts_mld_pco2$value_mld1,ts_mld_pco2$value_mld3, ts_mld_pco2$value_mld5, ts_mld_pco2$value_mldrho, ts_mld_pco2$value_mldtke), order.by = ts_mld_pco2$date)
+names(ts_xts) <- c("MLD Age 1", "MLD Age 3", "MLD Age 5", "MLD Rho", "MLD Tke")
+ts_pco2_xts <- xts(ts_mld_pco2$value_pCO2, order.by = ts_mld_pco2$date)
+names(ts_pco2_xts) <- "pCO2 Finnmaid"
 
 ts_xts %>% 
-  dygraph(group = "SST") %>% 
+  dygraph(group = "MLD") %>% 
   dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
-  dySeries("GETM_SST") %>% 
-  dySeries("Finnmaid", color = "red") %>% 
-  dyAxis("y", label = "SST [deg C]") %>% 
+  dySeries("MLD Age 1") %>% 
+  dySeries("MLD Age 3", color = "red") %>% 
+  dyAxis("y", label = "MLD [m]") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
 
-ts_dif_xts %>% 
-  dygraph(group = "SST") %>% 
+# add sd as ribbon here
+ts_pco2_xts %>% 
+  dygraph(group = "MLD") %>% 
   dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
-  dySeries("Difference") %>% 
-  dyAxis("y", label = "delta SST (Finnmaid - GETM 2-4m) [deg C]") %>% 
+  dySeries("pCO2 Finnmaid") %>% 
+  dyAxis("y", label = "") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
             drawAxesAtZero=TRUE)
 
