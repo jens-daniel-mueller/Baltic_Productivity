@@ -345,7 +345,7 @@ rm(comparison, SST_GETM_mean,SST_GETM_whole,SST_GETM_whole_3d,timeseries)
 
 Now we plot the SST against time for both timeseries, as well as the difference between both SST timeseries.
 
-```{r timeseries_dygraph}
+```{r timeseries_dygraph, fig.asp=0.6}
 
 # create xts object for dygraph plot
 
@@ -699,10 +699,22 @@ comparison_hov_data %>%
 rm(comparison_hov_data)
 ```
 
-# pCO2 readings and mixed layer depths
-## Mixed layer depths
+# Regional pCO2 and mixed layer depths
 
-```{r mld_readings_2}
+Within this chapter we relate Finnmaid pCO~2~ observations and different mixed layer depths estimates from GETM within the Northern Gotland Sea area.
+
+## GETM mixed layer depths
+
+As a first step we read-in following mixed layer depths estimated from GETM:
+
+* MLD Age 1: Penetration depth of a surface tracer injected into the surface after 1 days
+* MLD Age 3: Penetration depth of a surface tracer injected into the surface after 2 days
+* MLD Age 5: Penetration depth of a surface tracer injected into the surface after 3 days
+* MLD Rho: Mixed layer depth based on a density criterion
+* MLD Tke: Mixing layer depth based on the turbulent kinetic energy and the density stratification
+
+
+```{r mld_readings, eval=FALSE}
 var_all <- c("mld_age_1", "mld_age_3", "mld_age_5", "mld_rho", "mld_tke")
 
 filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
@@ -784,7 +796,12 @@ rm(mld_GETM_whole, n, file, time_units, var)
 
 rm(a, filesList_2d, var_all, lat, lon)
 ```
-## pCO2 readings
+
+
+## Finnmaid pCO~2~
+
+In the following we extract Finnmaid pCO~2~ data for the Northern Gotland Sea. For each crossing of the ferry, mean, minimum, maximum and the standard deviation of pCO~2~ are calculated.
+
 
 ```{r finnmaid_pCO2, eval = FALSE}
 nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
@@ -842,9 +859,9 @@ rm(array, high_lat,low_lat, nc, slice, var, timeseries, latitude_east, date_time
 ```
 ## Data merging
 
-We want a datafile including the pCO2 values, as measured from the Finnmaid, as well as all five mixed layer depth parameters. For the pCO2 values, we want the corresponding minimum, maximum and standard deviation values per date. 
+We want a datafile including the pCO~2~ values, as measured from the Finnmaid, as well as all five mixed layer depth parameters.
 
-```{r merging_mld_pco2, eval= TRUE}
+```{r merging_mld_pco2, eval=FALSE}
 
 ## change pco2 reading to without lat restrictions but write lat & lon or coordinat vector as well
 ## combine all, in plot filter for the lat restrictions, that we way we can save one round of data prep
@@ -861,6 +878,17 @@ ts_pCO2 <- ts_pCO2 %>%
 
 #cor_space, which corvector entries belong to lat restrictions
 # if no lat restrictions, comment out the following 4 lines or set them such, that they don't actually restrict
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+
+file <- filesList_2d[8]
+nc <- nc_open(paste("data/", file, sep = ""))
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+corvector <- c(1:544)
+nc_close(nc)
+cor_space <- as.data.frame(cbind(lon, lat, corvector))
+
 cor_space_restriction <- cor_space %>% 
   filter(lat > low_lat, lat<high_lat)
 low_cor <- min(cor_space_restriction$corvector)
@@ -924,9 +952,9 @@ write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_
 
 ## Timeseries plots
 
-```{r timeseries pCO2 dygraphs}
+```{r timeseries_pCO2_dygraphs}
 
-ts_mld_pco2 <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestriction.csv"))
+ts_mld_pco2 <- read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestrictions.csv"))
 
 # ts <- ts %>% 
 #   select(date_time, Finnmaid = value.x, GETM=value.y, dif = difference)
@@ -959,9 +987,8 @@ rm(ts,ts_dif_xts,ts_xts)
 
 # Open tasks
 
-* Check why first 6 GETM nc files do not open
-* Request 2003-2005 GETM data
-* Request GETM wind data
-* Include temperature 2-4 m in 2d GETM files
+* Check why first 6 GETM nc files do not open  -> revised file expected in Feb 2020
+* Request 2003-2005 GETM data -> expected in Feb 2020
+* Request GETM wind data -> expected in Feb 2020
 * Quantify diurnal SST variability in GETM 2d file, in order to estimate biases introduced by comparing daily mean values
-* Why are there some Finnmaid observations missing with low distance to Travemuende?
+* Why are there some Finnmaid observations missing with low distance to Travemuende? -> guess ferrybox is switched of in harbor window
