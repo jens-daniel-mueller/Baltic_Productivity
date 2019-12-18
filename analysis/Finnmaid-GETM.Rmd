@@ -696,7 +696,7 @@ comparison_hov_data %>%
     )+
     facet_wrap(~year, ncol = 1, scales = "free_x")
 
-rm(comparison_hov_data, select_route)
+rm(comparison_hov_data)
 ```
 
 # pCO2 readings and mixed layer depths
@@ -715,6 +715,9 @@ lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
 corvector <- c(1:544)
 nc_close(nc)
+
+cor_space <- as.data.frame(cbind(lon, lat, corvector))
+
 
 rm(file, nc)
 
