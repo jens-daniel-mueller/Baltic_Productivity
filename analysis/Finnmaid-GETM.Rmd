@@ -647,7 +647,8 @@ comparison_hov_data <-
     read_csv(here::here("data/_merged_data_files/", file = "SST_hovmoeller_GETM_Finn.csv"))
 
 comparison_hov_data <- comparison_hov_data %>% 
-  mutate(year = year(week))
+  mutate(year = year(week),
+         week = as.Date(week))
 
 comparison_hov_data %>%
   filter(year > 2006, year < 2019) %>% 
@@ -708,8 +709,8 @@ Within this chapter we relate Finnmaid pCO~2~ observations and different mixed l
 As a first step we read-in following mixed layer depths estimated from GETM:
 
 * MLD Age 1: Penetration depth of a surface tracer injected into the surface after 1 days
-* MLD Age 3: Penetration depth of a surface tracer injected into the surface after 2 days
-* MLD Age 5: Penetration depth of a surface tracer injected into the surface after 3 days
+* MLD Age 3: Penetration depth of a surface tracer injected into the surface after 3 days
+* MLD Age 5: Penetration depth of a surface tracer injected into the surface after 5 days
 * MLD Rho: Mixed layer depth based on a density criterion
 * MLD Tke: Mixing layer depth based on the turbulent kinetic energy and the density stratification
 
@@ -994,6 +995,7 @@ The pCO2 measurments are also to be analysed for the whole basin next. Same as f
 
 ```{r finnmaid_basinwide_pCO2, eval = FALSE}
 
+
 #Prepare data for Hovmoeller Plot
 
 
@@ -1067,7 +1069,7 @@ rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,long
 ```
 ## Data Merging without lat restrictions
 
-```{r merging_mld_pco2, eval=FALSE}
+```{r merging_mld_pco2_nolatrestriction, eval=FALSE}
 
 ## change pco2 reading to without lat restrictions but write lat & lon or coordinat vector as well
 ## combine all, in plot filter for the lat restrictions, that we way we can save one round of data prep
@@ -1078,63 +1080,21 @@ ts_mld_age_5 <- read_csv(here::here("data/_summarized_data_files/", file = "GETM
 ts_mld_rho <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_rho_whole_corvector.csv"))
 ts_mld_tke <- read_csv(here::here("data/_summarized_data_files/", file = "GETM_mld_tke_whole_corvector.csv"))
 
-#pCO2 Finnmaid
-ts_pCO2 <- ts_pCO2 %>% 
-  transmute( value_pCO2 = value, sd_pCO2 = sd, min_pCO2 = min, max_pCO2 = max, date = date_time)
-
-#cor_space, which corvector entries belong to lat restrictions
-# if no lat restrictions, comment out the following 4 lines or set them such, that they don't actually restrict
-
-filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
-
-file <- filesList_2d[8]
-nc <- nc_open(paste("data/", file, sep = ""))
-lon <- ncvar_get(nc, "lonc")
-lat <- ncvar_get(nc, "latc", verbose = F)
-corvector <- c(1:544)
-nc_close(nc)
-cor_space <- as.data.frame(cbind(lon, lat, corvector))
-
-#cor_space_restriction <- cor_space %>% 
-#  filter(lat > low_lat, lat<high_lat)
-#low_cor <- min(cor_space_restriction$corvector)
-#high_cor <- max(cor_space_restriction$corvector)
-
-#mld_age_1
 ts_mld_age_1 <- ts_mld_age_1 %>%
-  #filter(corvector > low_cor, corvector<high_cor) %>%
-  group_by(date) %>% 
-  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>%
-  transmute( date = date, corvector = corvector_value, value_mld1 = mld_value)
-#mld_age_3
+    transmute( date = date, corvector = corvector, value_mld1 = mld)
+
 ts_mld_age_3 <- ts_mld_age_3 %>%
-  #filter(corvector > low_cor, corvector<high_cor) %>%
-  group_by(date) %>% 
-  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>%
-  transmute( date = date, corvector = corvector_value, value_mld3 = mld_value)
-#mld_age_5
+    transmute( date = date, corvector = corvector, value_mld3 = mld)
+
 ts_mld_age_5 <- ts_mld_age_5 %>%
-  #filter(corvector > low_cor, corvector<high_cor) %>%
-  group_by(date) %>% 
-  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>%
-  transmute( date = date, corvector = corvector_value, value_mld5 = mld_value)
-#mld_rho
+    transmute( date = date, corvector = corvector, value_mld5 = mld)
+
 ts_mld_rho <- ts_mld_rho %>%
-  #filter(corvector > low_cor, corvector<high_cor) %>%
-  group_by(date) %>% 
-  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>%
-  transmute( date = date, corvector = corvector_value, value_mldrho = mld_value)
-#mld_tke
+    transmute( date = date, corvector = corvector, value_mldrho = mld)
+
 ts_mld_tke <- ts_mld_tke %>%
-  #filter(corvector > low_cor, corvector<high_cor) %>%
-  group_by(date) %>% 
-  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>%
-  transmute( date = date, corvector = corvector_value, value_mldtke = mld_value)
+    transmute( date = date, corvector = corvector, value_mldtke = mld)
+
 
 
 ts_mld <- bind_cols(ts_mld_age_1, ts_mld_age_3, ts_mld_age_5, ts_mld_rho, ts_mld_tke)
@@ -1147,12 +1107,18 @@ ts_mld$date <- ts_mld$date %>%
   round.POSIXt(units = "days") %>% 
   as.POSIXct(tz = "UTC")
 
-ts_mld_pco2_full <- full_join(ts_pCO2, ts_mld, by = "date")
+ts_pCO2$date <- ts_pCO2$date %>% 
+  as.POSIXct() %>% 
+  cut.POSIXt(breaks = "days") %>% 
+  round.POSIXt(units = "days") %>% 
+  as.POSIXct(tz = "UTC")
+
+
+ts_mld_pco2_full <- full_join(ts_pCO2, ts_mld, by =c("date","corvector"))
 #ts_mld_pco2_inner <- inner_join(ts_pCO2, ts_mld, by = "date")
 
 ts_mld_pco2_full %>% 
-write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_latrestrictions.csv"))
-
+write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"))
 
 ```
 
@@ -1160,20 +1126,19 @@ write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_
 
 
 ### Daily GETM mld
-```{r hovmoeller_mld}
-mld_GETM <- 
-  read_csv(here::here("data/_merged_data_files/", file = ".csv"))
+```{r hovmoeller_mld, fig.asp=5, fig.cap="Daily mean GETM mld values as a function of time and the ships distance to Travemuende along route E."}
+ts_mld_pco2_full <- 
+  read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"))
 
-mld_GETM <- mld_GETM %>% 
+ts_mld_pco2_full_hov <- ts_mld_pco2_full %>% 
   mutate(date = ymd(date), 
          year = year(date),
          dist.trav = corvector*2)
-
-mld_GETM %>% 
+#mld age 1
+ts_mld_pco2_full_hov %>% 
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mld1))+
-      #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
       scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
@@ -1186,7 +1151,108 @@ mld_GETM %>%
         legend.key.height = unit(0.3, "cm")
       )+
       facet_wrap(~year, ncol = 1, scales = "free_x")
+#mld age 3
+ts_mld_pco2_full_hov %>% 
+  filter(year > 2006, year < 2019) %>% 
+  ggplot()+
+    geom_raster(aes(date, dist.trav, fill=value_mld3))+
+      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_x_date(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )+
+      facet_wrap(~year, ncol = 1, scales = "free_x")
+#mld age 5
+ts_mld_pco2_full_hov %>% 
+  filter(year > 2006, year < 2019) %>% 
+  ggplot()+
+    geom_raster(aes(date, dist.trav, fill=value_mld5))+
+      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_x_date(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )+
+      facet_wrap(~year, ncol = 1, scales = "free_x")
+#mld rho
+ts_mld_pco2_full_hov %>% 
+  filter(year > 2006, year < 2019) %>% 
+  ggplot()+
+    geom_raster(aes(date, dist.trav, fill=value_mldrho))+
+      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_x_date(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )+
+      facet_wrap(~year, ncol = 1, scales = "free_x")
+
+#mld tke
+ts_mld_pco2_full_hov %>% 
+  filter(year > 2006, year < 2019) %>% 
+  ggplot()+
+    geom_raster(aes(date, dist.trav, fill=value_mldtke))+
+      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_x_date(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )+
+      facet_wrap(~year, ncol = 1, scales = "free_x")
+
+# Is there a possibility to show years in rows and different mld parameters as columns? Would that be more informative?
 ```
+
+###Weekly Finnmaid pCO2 readings 
+```{r hovmoeller_Finnmaid_pco2, fig.asp=5, fig.cap="Mean weekly observed (Finnmaid) pCO2 as a function of time and the ships distance to Travemuende along route E."}
+# Hovmoeller Plot, difference SST Finn - SST GETM
+
+ts_mld_pco2_full_hov_2 <- ts_mld_pco2_full_hov %>% 
+  mutate(week = as.Date(week(date)),
+         date = as.Date(date))
+
+ts_mld_pco2_full_hov_2 %>%
+  filter(year > 2006, year < 2019) %>% 
+    ggplot()+
+    geom_raster(aes(week, dist.trav, fill=value_pCO2_Finn))+
+    #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
+    scale_fill_viridis_c(name="Finnmaid pCO2 [ppm]", na.value = "white", option = "B")+
+    scale_x_date(expand = c(0,0))+
+    scale_y_continuous(expand = c(0,0))+
+    labs(y="Distance to Travemuende [km]")+
+    theme_bw()+
+    theme(
+      axis.title.x = element_blank(),
+      legend.position = "bottom",
+      legend.key.width = unit(1.3, "cm"),
+      legend.key.height = unit(0.3, "cm")
+    )+
+    facet_wrap(~year, ncol = 1, scales = "free_x")
+
+```
+
+
 # Open tasks
 
 * Check why first 6 GETM nc files do not open  -> revised file expected in Feb 2020
