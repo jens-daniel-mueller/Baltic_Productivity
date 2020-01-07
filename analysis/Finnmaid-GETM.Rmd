@@ -651,7 +651,7 @@ comparison_hov_data <- comparison_hov_data %>%
          week = as.Date(week))
 
 comparison_hov_data %>%
-  filter(year > 2006, year < 2019) %>% 
+  filter(year > 2007, year < 2009) %>% 
     ggplot()+
     geom_raster(aes(week, dist.trav, fill=value_SST_Finn_mean))+
     #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
@@ -1127,8 +1127,10 @@ write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_
 
 ### Daily GETM mld
 ```{r hovmoeller_mld, fig.asp=5, fig.cap="Daily mean GETM mld values as a function of time and the ships distance to Travemuende along route E."}
+
 ts_mld_pco2_full <- 
-  read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"))
+  read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"), guess_max = 105537)
+# why guess_max so high? because the first 105536 rows of mld values are empty and when opening are interpreted as factors, which results in a parsing error
 
 ts_mld_pco2_full_hov <- ts_mld_pco2_full %>% 
   mutate(date = ymd(date), 
@@ -1226,14 +1228,16 @@ ts_mld_pco2_full_hov %>%
 
 ###Weekly Finnmaid pCO2 readings 
 ```{r hovmoeller_Finnmaid_pco2, fig.asp=5, fig.cap="Mean weekly observed (Finnmaid) pCO2 as a function of time and the ships distance to Travemuende along route E."}
-# Hovmoeller Plot, difference SST Finn - SST GETM
+
 
 ts_mld_pco2_full_hov_2 <- ts_mld_pco2_full_hov %>% 
-  mutate(week = as.Date(week(date)),
-         date = as.Date(date))
+  mutate(year = year(date),
+         week = as.Date(cut(ts_mld_pco2_full$date, breaks="weeks")))
 
-ts_mld_pco2_full_hov_2 %>%
-  filter(year > 2006, year < 2019) %>% 
+ts_mld_pco2_full_hov_2_naremove <- na.omit(ts_mld_pco2_full_hov_2)
+
+ts_mld_pco2_full_hov_2_naremove %>%
+  filter(year > 2002, year < 2019) %>% 
     ggplot()+
     geom_raster(aes(week, dist.trav, fill=value_pCO2_Finn))+
     #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
@@ -1249,6 +1253,8 @@ ts_mld_pco2_full_hov_2 %>%
       legend.key.height = unit(0.3, "cm")
     )+
     facet_wrap(~year, ncol = 1, scales = "free_x")
+
+rm(ts_mld_pco2_full_hov_2_naremove, ts_mld_pco2_full_hov_2)
 
 ```
 
