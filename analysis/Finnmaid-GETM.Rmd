@@ -1126,7 +1126,11 @@ write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_
 
 
 ### Daily GETM mld
-```{r hovmoeller_mld, fig.asp=5, fig.cap="Daily mean GETM mld values as a function of time and the ships distance to Travemuende along route E."}
+
+We present Hovmoeller Plots for the 5 mixed layer depth parameters (see 5.1). The daily GETM mld values are presented as a function of time and the ships distance to Travemuende along route E. Plots are shown seperatly for each parameter and years. 
+
+This timeseries represents mixed layer depth values for the parameter `mld_age_1` from 2007 to 2019. 
+```{r hovmoeller_mld_1, fig.asp=5, fig.cap="Daily mean GETM mld age 1 values as a function of time and the ships distance to Travemuende along route E."}
 
 ts_mld_pco2_full <- 
   read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"), guess_max = 105537)
@@ -1153,12 +1157,17 @@ ts_mld_pco2_full_hov %>%
         legend.key.height = unit(0.3, "cm")
       )+
       facet_wrap(~year, ncol = 1, scales = "free_x")
+```
+
+This timeseries represents mixed layer depth values for the parameter `mld_age_3` from 2007 to 2019.
+
+```{r hovmoeller_mld_3, fig.asp=5, fig.cap="Daily mean GETM mld age 3 values as a function of time and the ships distance to Travemuende along route E."}
 #mld age 3
 ts_mld_pco2_full_hov %>% 
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mld3))+
-      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Age 3 [m]", option = "B")+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1170,12 +1179,17 @@ ts_mld_pco2_full_hov %>%
         legend.key.height = unit(0.3, "cm")
       )+
       facet_wrap(~year, ncol = 1, scales = "free_x")
+```
+
+This timeseries represents mixed layer depth values for the parameter `mld_age_5` from 2007 to 2019.
+
+```{r hovmoeller_mld_5, fig.asp=5, fig.cap="Daily mean GETM mld age 5 values as a function of time and the ships distance to Travemuende along route E."}
 #mld age 5
 ts_mld_pco2_full_hov %>% 
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mld5))+
-      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Age 5 [m]", option = "B")+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1187,12 +1201,17 @@ ts_mld_pco2_full_hov %>%
         legend.key.height = unit(0.3, "cm")
       )+
       facet_wrap(~year, ncol = 1, scales = "free_x")
+```
+
+This timeseries represents mixed layer depth values for the parameter `mld_rho` from 2007 to 2019.
+
+```{r hovmoeller_mld_rho, fig.asp=5, fig.cap="Daily mean GETM mld rho values as a function of time and the ships distance to Travemuende along route E."}
 #mld rho
 ts_mld_pco2_full_hov %>% 
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mldrho))+
-      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Rho [m]", option = "B")+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1205,12 +1224,20 @@ ts_mld_pco2_full_hov %>%
       )+
       facet_wrap(~year, ncol = 1, scales = "free_x")
 
+```
+
+This timeseries represents mixed layer depth values for the parameter `mld_tke` from 2007 to 2019.
+
+```{r hovmoeller_mld_tke, fig.asp=5, fig.cap="Daily mean GETM mld tke values as a function of time and the ships distance to Travemuende along route E."}
 #mld tke
+# there is a problem in the original data, or nc import for this variable, there are negative values and values up to ~3000, 
+# that for the second filter (filter(value_mldtke >0, value_mldtke < 300)) was added, to circumvent the issue
 ts_mld_pco2_full_hov %>% 
-  filter(year > 2006, year < 2019) %>% 
+  filter(year > 2006, year < 2019) %>%
+  filter(value_mldtke >0, value_mldtke < 300) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mldtke))+
-      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Tke [m]", option = "B")+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1254,8 +1281,38 @@ ts_mld_pco2_full_hov_2_naremove %>%
     )+
     facet_wrap(~year, ncol = 1, scales = "free_x")
 
-rm(ts_mld_pco2_full_hov_2_naremove, ts_mld_pco2_full_hov_2)
 
+
+```
+
+### Comparison pCO2 and mld age 5
+
+```{r hovmoeller_Finmmaid-GETM_pcO2-mld, fig.asp=5, fig.cap="Mean weekly difference between modelled (GETM)  mixed layer depth and observed (Finnmaid) pCO2 values as a function of time and the ships distance to Travemuende along route E."}
+
+comparison_hov_pco2_mld <- ts_mld_pco2_full_hov_2 %>% 
+  na.omit() %>% 
+  mutate(difference = (value_pCO2_Finn - value_mld5))
+
+comparison_hov_pco2_mld %>%
+  filter(year > 2006, year < 2019) %>% 
+    ggplot()+
+    geom_raster(aes(week, dist.trav, fill= difference))+
+    #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
+    scale_fill_divergent(name="Mean weekly mld-pCO2  difference GETM-FM", na.value = "white",
+                         mid = 'grey')+
+    scale_x_date(expand = c(0,0))+
+    scale_y_continuous(expand = c(0,0))+
+    labs(y="Distance to Travemuende [km]")+
+    theme_bw()+
+    theme(
+      axis.title.x = element_blank(),
+      legend.position = "bottom",
+      legend.key.width = unit(1.3, "cm"),
+      legend.key.height = unit(0.3, "cm")
+    )+
+    facet_wrap(~year, ncol = 1, scales = "free_x")
+
+rm(ts_mld_pco2_full_hov_2_naremove, ts_mld_pco2_full_hov_2, ts_mld_pco2_full_hov, comparison_hov_pco2_mld)
 ```
 
 
