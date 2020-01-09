@@ -1314,7 +1314,109 @@ comparison_hov_pco2_mld %>%
 
 rm(ts_mld_pco2_full_hov_2_naremove, ts_mld_pco2_full_hov_2, ts_mld_pco2_full_hov, comparison_hov_pco2_mld)
 ```
+# Medium Salinity 
 
+In the following section, we want to calculate the medium salinity per month and transect section. We will therefore end up with 544 x 12 salinity values.
+
+```{r medium_salinity, eval = FALSE}
+
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+var <- "SSS_east" #sea surface salinity, route e
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+longitude_east <-ncvar_get(nc, "longitude_east")
+date_time_o <- ncvar_get(nc, "otime_east")
+
+  array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+  #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+  cor_vector <- c(1:544)
+  
+  #i <- 5
+start <- Sys.time()
+  for (i in seq(1,length(route),1)){
+  
+      
+    if(route[i] == select_route) {
+      slice <- array[i,]          #define slice of the data, per row (per measurment day)
+      value <- slice
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      #if detailed date/time information is needed: uncomment that
+      #date <- as.Date(c(1:544))   # set up "date" variable to be overwritten later, needs to be                                           "Date" object
+      #for (a in seq(1,length(latitude_east),1)){              # for slice i the corresponding 544                                                                   transect steps are  
+      #temp_time <- ymd("2000-01-01") + date_time_o[i,a]       # adjoined by corresponding time                                                                        ("otime_east")
+      #date[a] <- temp_time
+      #}
+      #temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, 
+      #corvector =   cor_vector, date_time = date)
+      #temp$date_time <- as.POSIXct(temp$date_time)
+      
+      #when detailed time/date information is needed, comment the following
+      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east,
+      corvector =  cor_vector)
+      temp$date <- date
+      # 
+      
+      if (exists("timeseries", inherits = FALSE)){
+        timeseries <- bind_rows(timeseries, temp)
+      } else{timeseries <- temp}
+      
+      rm(temp, value, date)
+    }
+    print(i)
+  }
+#end <- Sys.time()
+nc_close(nc)
+
+finnmaid_sss_corvector <- timeseries %>% 
+  mutate(sss = value,
+         year = year(date),
+         month = month(date))
+
+  for (cor in 1:544){
+    
+    temp <- finnmaid_sss_corvector %>% 
+      filter(corvector == cor) %>% 
+      select(month, corvector, sss) %>% 
+      group_by(month, corvector) %>% 
+      summarise_all(mean, na.rm = TRUE)
+    
+    if (exists("monthly_salinity", inherits = FALSE)){
+        monthly_salinity <- bind_rows(monthly_salinity, temp)
+      } else{monthly_salinity <- temp}
+    
+  }
+  
+
+monthly_salinity %>% 
+write_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_monthly_Salinity_perTransect_short.csv"))
+
+
+rm(monthly_salinity, temp, finnmaid_sss_corvector, timeseries)
+```
+
+```{r scatterplot_salinity}
+
+monthly_salinity <- read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_monthly_Salinity_perTransect.csv"))
+
+monthly_salinity$month <- as.factor(monthly_salinity$month)
+
+monthly_salinity %>% 
+ggplot(aes(corvector,sss, color = month))+
+  geom_path()+
+  scale_color_discrete()
+
+```
 
 # Open tasks
 
