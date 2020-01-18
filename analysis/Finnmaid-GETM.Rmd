@@ -1145,7 +1145,9 @@ ts_mld_pco2_full_hov %>%
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mld1))+
-      scale_fill_viridis_c(name="GETM MLD Age 1 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Age 1 [m]",
+                           limits = c(0,80),
+                           direction = -1)+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1167,7 +1169,9 @@ ts_mld_pco2_full_hov %>%
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mld3))+
-      scale_fill_viridis_c(name="GETM MLD Age 3 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Age 3 [m]",
+                           limits = c(0,80),
+                           direction = -1)+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1189,7 +1193,9 @@ ts_mld_pco2_full_hov %>%
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mld5))+
-      scale_fill_viridis_c(name="GETM MLD Age 5 [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Age 5 [m]",
+                           limits = c(0,80),
+                           direction = -1)+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1211,7 +1217,9 @@ ts_mld_pco2_full_hov %>%
   filter(year > 2006, year < 2019) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mldrho))+
-      scale_fill_viridis_c(name="GETM MLD Rho [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Rho [m]",
+                           limits = c(0,80),
+                           direction = -1)+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1234,10 +1242,12 @@ This timeseries represents mixed layer depth values for the parameter `mld_tke` 
 # that for the second filter (filter(value_mldtke >0, value_mldtke < 300)) was added, to circumvent the issue
 ts_mld_pco2_full_hov %>% 
   filter(year > 2006, year < 2019) %>%
-  filter(value_mldtke >0, value_mldtke < 300) %>% 
+  #filter(value_mldtke >0, value_mldtke < 300) %>% 
   ggplot()+
     geom_raster(aes(date, dist.trav, fill=value_mldtke))+
-      scale_fill_viridis_c(name="GETM MLD Tke [m]", option = "B")+
+      scale_fill_viridis_c(name="GETM MLD Tke [m]",
+                           limits = c(0,80),
+                           direction = -1)+
       scale_x_date(expand = c(0,0))+
       scale_y_continuous(expand = c(0,0))+
       labs(y="Distance to Travemuende [km]")+
@@ -1256,8 +1266,8 @@ ts_mld_pco2_full_hov %>%
 ###Weekly Finnmaid pCO2 readings 
 ```{r hovmoeller_Finnmaid_pco2, fig.asp=5, fig.cap="Mean weekly observed (Finnmaid) pCO2 as a function of time and the ships distance to Travemuende along route E."}
 
-ts_pco2_full <-
-read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_pCO2_whole_nolatlimits_corvector.csv"))
+# ts_pco2_full <-
+# read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_pCO2_whole_nolatlimits_corvector.csv"))
 
 
 #ts_mld_pco2_full_hov <- ts_mld_pco2_full %>% 
@@ -1274,9 +1284,9 @@ read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_pCO2_whole_
 #  mutate(year = year(week)) #%>% 
 #  #drop_na()
 
-ts_pco2_full_hov <- ts_pco2_full %>% 
+ts_pco2_full_hov <- ts_mld_pco2_full %>% 
   mutate(date = ymd(date),
-         week = as.Date(cut(ts_pco2_full$date, breaks="weeks")),
+         week = as.Date(cut(date, breaks="weeks")),
          dist.trav = corvector*2)
 
 ts_pco2_full_hov <- ts_pco2_full_hov %>% 
@@ -1285,8 +1295,7 @@ ts_pco2_full_hov <- ts_pco2_full_hov %>%
   summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
   as.data.frame() %>% 
   mutate(year = year(week),
-  value_pco2_Finn_mean = mean) %>% 
-  drop_na()
+  value_pco2_Finn_mean = mean)
 
 
 ts_pco2_full_hov %>%
@@ -1294,7 +1303,9 @@ ts_pco2_full_hov %>%
     ggplot()+
     geom_raster(aes(week, dist.trav, fill=value_pco2_Finn_mean))+
     #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
-    scale_fill_viridis_c(name="Finnmaid pCO2 [ppm]", na.value = "white", option = "B")+
+    scale_fill_viridis_c(name="Finnmaid pCO2 [ppm]",
+                         limits = c(50,600),
+                         na.value = "white")+
     scale_x_date(expand = c(0,0))+
     scale_y_continuous(expand = c(0,0))+
     labs(y="Distance to Travemuende [km]")+
@@ -1314,32 +1325,35 @@ ts_pco2_full_hov %>%
 
 ```{r hovmoeller_Finmmaid-GETM_pcO2-mld, fig.asp=5, fig.cap="Mean weekly difference between modelled (GETM)  mixed layer depth and observed (Finnmaid) pCO2 values as a function of time and the ships distance to Travemuende along route E."}
 
-ts_mld_pco2_full <- 
-  read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"), guess_max = 105537)
+# ts_mld_pco2_full <- 
+#   read_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv"), guess_max = 105537)
 # why guess_max so high? because the first 105536 rows of mld values are empty and when opening are interpreted as factors, which results in a parsing error
 
 ts_mld_pco2_full_hov <- ts_mld_pco2_full %>% 
-  mutate(date = ymd(date), 
-          week = as.Date(cut(ts_mld_pco2_full$date, breaks="weeks")),
+  mutate(date = ymd(date),
+         week = as.Date(cut(date, breaks="weeks")),
          dist.trav = corvector*2)
 
 comparison_hov_pco2_mld <- ts_mld_pco2_full_hov %>% 
   mutate(relation = (value_pCO2_Finn/value_mld5)) %>% 
-  select(value_pCO2_Finn, value_mld5, relation, week, dist.trav) %>% 
+  select(relation, week, dist.trav) %>% 
   dplyr::group_by(dist.trav, week) %>% 
-  summarise_all(list(mean=~mean(., na.rm = TRUE))) %>% 
+  summarise_all(list(relation=~mean(., na.rm = TRUE))) %>% 
   as.data.frame %>% 
-  mutate(year = year(week)) %>% 
-  drop_na()                   
+  mutate(year = year(week))               
+
+# comparison_hov_pco2_mld %>%
+#   filter(year > 2006, year < 2019, relation > 0, relation<50) %>% 
+#     ggplot()+
+#     geom_histogram(aes(relation))
 
 comparison_hov_pco2_mld %>%
   dplyr::filter(year > 2006, year < 2019) %>% 
-  dplyr::filter(relation_mean > 0 , relation_mean < 800) %>% 
     ggplot()+
-    geom_raster(aes(week, dist.trav, fill= relation_mean))+
-    #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
-    scale_fill_divergent(name="Mean weekly pCO2/mld5  relation GETM-FM", na.value = "white",
-                         mid = 'grey')+
+    geom_raster(aes(week, dist.trav, fill= relation))+
+    scale_fill_viridis_c(name="pCO2 / MLD [ppm/m]",
+                         limits = c(0,50),
+                         na.value = "white")+
     scale_x_date(expand = c(0,0))+
     scale_y_continuous(expand = c(0,0))+
     labs(y="Distance to Travemuende [km]")+
@@ -1352,7 +1366,7 @@ comparison_hov_pco2_mld %>%
     )+
     facet_wrap(~year, ncol = 1, scales = "free_x")
 
-rm(ts_mld_pco2_full_hov_2_naremove, ts_mld_pco2_full_hov, ts_mld_pco2_full_hov, comparison_hov_pco2_mld)
+rm(ts_mld_pco2_full_hov, comparison_hov_pco2_mld, ts_mld_pco2_full, ts_mld_pco2_full, ts_pco2_full_hov)
 ```
 # Medium Salinity 
 
@@ -1447,7 +1461,7 @@ rm(monthly_salinity, temp, finnmaid_sss_corvector, timeseries)
 
 ```{r scatterplot_salinity}
 
-monthly_salinity <- read_csv(here::here("data/_summarized_data_files/", file = "Finnmaid_monthly_Salinity_perTransect.csv"))
+monthly_salinity <- read_csv(here::here("data/_summarized_data_files", file = "Finnmaid_monthly_Salinity_perTransect_short.csv"))
 
 monthly_salinity$month <- as.factor(monthly_salinity$month)
 
