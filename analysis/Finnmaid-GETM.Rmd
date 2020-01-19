@@ -651,7 +651,7 @@ comparison_hov_data <- comparison_hov_data %>%
          week = as.Date(week))
 
 comparison_hov_data %>%
-  filter(year > 2007, year < 2009) %>% 
+  filter(year > 2006, year < 2019) %>% 
     ggplot()+
     geom_raster(aes(week, dist.trav, fill=value_SST_Finn_mean))+
     #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
@@ -989,9 +989,9 @@ rm(ts,ts_dif_xts,ts_xts)
 
 The dataset for the regional analysis of mixed layer depths and pCO2 were written such, that already the complete information was calculated for the GETM data.
 
-## Finnmaid pCO2
+## Finnmaid pCO~2~
 
-The pCO2 measurments are also to be analysed for the whole basin next. Same as for the SST analysis, the route is divided in 2 km grids (startpoint Travemuende). That results in 544 coordinate points in every transect. The corresponding coordinate number (1:544) is added to the dataset, with the exact longitude and lattitude coordinates. 
+The pCO~2~ measurments are also to be analysed for the whole basin next. Same as for the SST analysis, the route is divided in 2 km grids (startpoint Travemuende). That results in 544 coordinate points in every transect. The corresponding coordinate number (1:544) is added to the dataset, with the exact longitude and lattitude coordinates. 
 
 ```{r finnmaid_basinwide_pCO2, eval = FALSE}
 
@@ -1067,6 +1067,7 @@ timeseries %>%
 
 rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,longitude_east,route,i,start, timeseries)
 ```
+
 ## Data Merging without lat restrictions
 
 ```{r merging_mld_pco2_nolatrestriction, eval=FALSE}
@@ -1122,7 +1123,7 @@ write_csv(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_pCO2_mld_
 
 ```
 
-##Hovmoeller Plots
+## Hovmoeller Plots
 
 
 ### Daily GETM mld
@@ -1461,14 +1462,20 @@ rm(monthly_salinity, temp, finnmaid_sss_corvector, timeseries)
 
 ```{r scatterplot_salinity}
 
-monthly_salinity <- read_csv(here::here("data/_summarized_data_files", file = "Finnmaid_monthly_Salinity_perTransect_short.csv"))
+monthly_salinity <- read_csv(
+  here::here("data/_summarized_data_files",
+             "Finnmaid_monthly_Salinity_perTransect_short.csv"))
 
-monthly_salinity$month <- as.factor(monthly_salinity$month)
+monthly_salinity <- monthly_salinity %>% 
+  mutate(month = as.factor(month),
+         dist.trav = corvector * 2)
 
 monthly_salinity %>% 
-ggplot(aes(corvector,sss, color = month))+
+  ggplot(aes(dist.trav, sss, color = month))+
   geom_path()+
-  scale_color_discrete()
+  labs(x="Distance to Travemuende [km]",
+       y="Surface Salinity")+
+  theme_bw()
 
 ```
 
