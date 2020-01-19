@@ -416,7 +416,7 @@ div.section {
 
 <h1 class="title toc-ignore">Finnmaid-GETM</h1>
 <h4 class="author">Jens Daniel Müller &amp; Lara Burchardt</h4>
-<h4 class="date">18 January, 2020</h4>
+<h4 class="date">19 January, 2020</h4>
 
 </div>
 
@@ -441,7 +441,7 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-01-18
+<strong>Last updated:</strong> 2020-01-19
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -532,10 +532,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytreec316aed109476888e7cba7ae3807aa24bfe00441targetblankc316aeda"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/c316aed109476888e7cba7ae3807aa24bfe00441" target="_blank">c316aed</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree8861cf7ac2d39077bd194df5a950ea93f72c48b4targetblank8861cf7a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/8861cf7ac2d39077bd194df5a950ea93f72c48b4" target="_blank">8861cf7</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytreec316aed109476888e7cba7ae3807aa24bfe00441targetblankc316aeda" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree8861cf7ac2d39077bd194df5a950ea93f72c48b4targetblank8861cf7a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -550,6 +550,9 @@ Ignored files:
     Ignored:    data/OSTIA/
     Ignored:    data/_merged_data_files/
     Ignored:    data/_summarized_data_files/
+
+Unstaged changes:
+    Deleted:    analysis/child_mld_GETM.Rmd
 
 </code></pre>
 <p>
@@ -1126,7 +1129,7 @@ comparison_hov_data &lt;- comparison_hov_data %&gt;%
          week = as.Date(week))
 
 comparison_hov_data %&gt;%
-  filter(year &gt; 2007, year &lt; 2009) %&gt;% 
+  filter(year &gt; 2006, year &lt; 2019) %&gt;% 
     ggplot()+
     geom_raster(aes(week, dist.trav, fill=value_SST_Finn_mean))+
     #scale_fill_scico(palette = &quot;vik&quot;, name=&quot;mean difference in SST [°C]&quot;)+
@@ -1457,8 +1460,8 @@ ts_xts %&gt;%
 <p>The dataset for the regional analysis of mixed layer depths and pCO2 were written such, that already the complete information was calculated for the GETM data.</p>
 </div>
 <div id="finnmaid-pco2-1" class="section level2">
-<h2><span class="header-section-number">6.2</span> Finnmaid pCO2</h2>
-<p>The pCO2 measurments are also to be analysed for the whole basin next. Same as for the SST analysis, the route is divided in 2 km grids (startpoint Travemuende). That results in 544 coordinate points in every transect. The corresponding coordinate number (1:544) is added to the dataset, with the exact longitude and lattitude coordinates.</p>
+<h2><span class="header-section-number">6.2</span> Finnmaid pCO<sub>2</sub></h2>
+<p>The pCO<sub>2</sub> measurments are also to be analysed for the whole basin next. Same as for the SST analysis, the route is divided in 2 km grids (startpoint Travemuende). That results in 544 coordinate points in every transect. The corresponding coordinate number (1:544) is added to the dataset, with the exact longitude and lattitude coordinates.</p>
 <pre class="r"><code>#Prepare data for Hovmoeller Plot
 
 
@@ -1580,9 +1583,11 @@ ts_mld_pco2_full &lt;- full_join(ts_pCO2, ts_mld, by =c(&quot;date&quot;,&quot;c
 
 ts_mld_pco2_full %&gt;% 
 write_csv(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv&quot;))</code></pre>
-<p>##Hovmoeller Plots</p>
+</div>
+<div id="hovmoeller-plots-1" class="section level2">
+<h2><span class="header-section-number">6.4</span> Hovmoeller Plots</h2>
 <div id="daily-getm-mld" class="section level3">
-<h3><span class="header-section-number">6.3.1</span> Daily GETM mld</h3>
+<h3><span class="header-section-number">6.4.1</span> Daily GETM mld</h3>
 <p>We present Hovmoeller Plots for the 5 mixed layer depth parameters (see 5.1). The daily GETM mld values are presented as a function of time and the ships distance to Travemuende along route E. Plots are shown seperatly for each parameter and years.</p>
 <p>This timeseries represents mixed layer depth values for the parameter <code>mld_age_1</code> from 2007 to 2019.</p>
 <pre class="r"><code>ts_mld_pco2_full &lt;- 
@@ -1786,7 +1791,7 @@ Mean weekly observed (Finnmaid) pCO2 as a function of time and the ships distanc
 </div>
 </div>
 <div id="comparison-pco2-and-mld-age-5" class="section level3">
-<h3><span class="header-section-number">6.3.2</span> Comparison pCO2 and mld age 5</h3>
+<h3><span class="header-section-number">6.4.2</span> Comparison pCO2 and mld age 5</h3>
 <pre class="r"><code># ts_mld_pco2_full &lt;- 
 #   read_csv(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;Finnmaid_GETM_pCO2_mld_nolatrestrictions.csv&quot;), guess_max = 105537)
 # why guess_max so high? because the first 105536 rows of mld values are empty and when opening are interpreted as factors, which results in a parsing error
@@ -1923,14 +1928,20 @@ write_csv(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;Finn
 
 
 rm(monthly_salinity, temp, finnmaid_sss_corvector, timeseries)</code></pre>
-<pre class="r"><code>monthly_salinity &lt;- read_csv(here::here(&quot;data/_summarized_data_files&quot;, file = &quot;Finnmaid_monthly_Salinity_perTransect_short.csv&quot;))
+<pre class="r"><code>monthly_salinity &lt;- read_csv(
+  here::here(&quot;data/_summarized_data_files&quot;,
+             &quot;Finnmaid_monthly_Salinity_perTransect_short.csv&quot;))
 
-monthly_salinity$month &lt;- as.factor(monthly_salinity$month)
+monthly_salinity &lt;- monthly_salinity %&gt;% 
+  mutate(month = as.factor(month),
+         dist.trav = corvector * 2)
 
 monthly_salinity %&gt;% 
-ggplot(aes(corvector,sss, color = month))+
+  ggplot(aes(dist.trav, sss, color = month))+
   geom_path()+
-  scale_color_discrete()</code></pre>
+  labs(x=&quot;Distance to Travemuende [km]&quot;,
+       y=&quot;Surface Salinity&quot;)+
+  theme_bw()</code></pre>
 <p><img src="figure/Finnmaid-GETM.Rmd/scatterplot_salinity-1.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="open-tasks" class="section level1">
