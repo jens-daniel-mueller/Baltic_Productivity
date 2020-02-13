@@ -1,0 +1,76 @@
+---
+title: "CT"
+author: "Jens Daniel Müller & Lara Burchardt"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  workflowr::wflow_html:
+    number_sections: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r library, message=FALSE, warning=FALSE, echo= FALSE}
+
+library(tidyverse)
+library(tidync)
+#library(ncdf4)
+library(lubridate)
+library(geosphere)
+library(dygraphs)
+library(xts)
+library(here)
+library(metR)
+
+```
+
+```{r subsetting_criteria, echo=FALSE}
+
+# route
+select_route <- "E"
+
+# variable names in 2d and 3d GETM files
+var <- "SST"
+var_3d <- "temp"
+
+# latitude limits
+low_lat <- 57.5
+high_lat <- 58.5
+
+# depth range to subset GETM 3d files
+d1_shallow <- 2
+d1_deep <- 4
+
+```
+
+# CT 
+
+Here we calculate the mean salinity across all measurments made between march - september in the NGS subregion. 
+
+```{r read_mld_pco2_data_ngs, echo=FALSE}
+
+nc <- tidync(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = "")) 
+
+
+
+tidync(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = "")) %>% 
+  activate("D0") %>% 
+  hyper_filter(latitude_east = latitude_east > 57.5 & latitude_east < 58.5) %>% 
+  activate("D1,D0") %>%
+  hyper_tibble()
+
+dimension <- tidync(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = "")) %>% 
+  activate("D1") %>% 
+  hyper_filter(route = route == "e") 
+
+  activate("D1") %>% 
+  hyper_tibble()
+
+```
