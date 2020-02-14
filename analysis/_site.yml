@@ -7,6 +7,14 @@ navbar:
     href: index.html
   - text: Finnmaid-GETM
     href: Finnmaid-GETM.html
+  - text: SST
+    href: SST.html
+  - text: MLD_pCO2
+    href: MLD_pCO2.html
+  - text: SSS
+    href: SSS.html
+  - text: CT
+    href: CT.html
   right:
   - icon: fa-github
     text: Source code

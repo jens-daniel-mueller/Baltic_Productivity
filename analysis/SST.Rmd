@@ -1,0 +1,637 @@
+---
+title: "SST"
+author: "Jens Daniel Müller & Lara Burchardt"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  workflowr::wflow_html:
+    number_sections: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+editor_options:
+  chunk_output_type: console
+---
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r library, message=FALSE, warning=FALSE, echo=FALSE}
+
+library(tidyverse)
+library(ncdf4)
+library(vroom)
+library(lubridate)
+library(geosphere)
+library(dygraphs)
+library(xts)
+library(here)
+library(metR)
+
+```
+
+```{r subsetting_criteria, echo=FALSE}
+
+# route
+select_route <- "E"
+
+# variable names in 2d and 3d GETM files
+var <- "SST"
+var_3d <- "temp"
+
+# latitude limits
+low_lat <- 57.5
+high_lat <- 58.5
+
+# depth range to subset GETM 3d files
+d1_shallow <- 2
+d1_deep <- 4
+
+```
+# Regional SST Comparison
+
+In a first approach, investigations are restricted to the daily mean values in the latitude range `r low_lat` - `r high_lat` deg N. The investigated variable is `r var`.
+
+
+## Preparation of GETM data
+
+As a first step we want to prepare the data from the GETM model to compare it later.  We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the 2d-files in our modeldata set, that include the `pattern = "Finnmaid.E.2d"`. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting `recursive = TRUE`. 
+
+```{r file_list_GETM_2d, eval=FALSE}
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+
+```
+
+We now loop through all the files in `fileList` we created before, to perform the data preparations and save the new arrays.
+To open a file in the netcdf format we use the openning function of the `ncdf4` package.
+
+```{r read_GETM_data_2d, eval=FALSE}
+
+for (n in 7:length(filesList_2d)) {
+
+#file <- filesList_2d[8]
+file <- filesList_2d[n]
+
+nc <- nc_open(paste("data/", file, sep = ""))
+
+print(nc)
+attributes(nc$var)
+attributes(nc$dim)
+
+lat <- ncvar_get(nc, "latc", verbose = F)
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+
+t <- time_units + ncvar_get(nc, "time")
+
+array <- ncvar_get(nc, var) # store the data in a 3-dimensional array
+dim(array) # should be 2d with dimensions: 1575 coordinate, 31d*(24h/d/3h)=248 time steps
+
+array <- as.data.frame(t(array), xy=TRUE)
+array <- as_tibble(array)
+
+
+gt_sst_ngs_part <- array %>%
+  set_names(as.character(lat)) %>%
+  mutate(date_time = t) %>%
+  gather("lat", "value", 1:length(lat)) %>%
+  mutate(lat = as.numeric(lat)) %>%
+  filter(lat > low_lat, lat<high_lat) %>%
+  group_by(date_time) %>%
+  summarise_all("mean") %>%
+  ungroup() %>%
+  mutate(var = var)
+
+
+if (exists("gt_sst_ngs")) {gt_sst_ngs <- bind_rows(gt_sst_ngs, gt_sst_ngs_part)}
+        else {gt_sst_ngs <- gt_sst_ngs_part}
+
+nc_close(nc)
+rm(array, nc, t, lat, lon)
+
+}
+
+gt_sst_ngs %>% 
+  vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_ngs.csv"))
+
+rm(gt_sst_ngs, n, file, time_units)
+```
+
+
+In a similar fashion we loop through all 3d GETM data files, and extract the SST reading from 2-4 m water depth.
+
+```{r file_list_GETM_3d}
+
+filesList_3d <- list.files(path= "data", pattern = "Finnmaid.E.3d.z.nc", recursive = TRUE)
+
+```
+
+```{r read_GETM_data_3d, eval=FALSE}
+
+# read lat vector from 2d file
+file <- filesList_2d[8]
+nc <- nc_open(paste("data/", file, sep = ""))
+lat <- ncvar_get(nc, "latc", verbose = F)
+nc_close(nc)
+
+
+for (n in 7:length(filesList_3d)) {
+
+#file <- filesList_3d[8]
+file <- filesList_3d[n]
+
+nc <- nc_open(paste("data/", file, sep = ""))
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+
+t <- time_units + ncvar_get(nc, "time") # read time vector
+d <- ncvar_get(nc, "zax") # read depths vector
+
+array <- ncvar_get(nc, var_3d) # store the data in a 3-dimensional array
+#dim(array) # should be 3d with dimensions: 544 coordinates, 51 depths, and number of days of month
+
+fillvalue <- ncatt_get(nc, var_3d, "_FillValue")
+nc_close(nc)
+
+# Working with the data
+array[array == fillvalue$value] <- NA
+
+    for (i in seq(1,length(t),1)){
+      
+      #i <- 3
+      array_slice <- array[, , i] # slices data from one day
+      
+      array_slice_df <- as.data.frame(t(array_slice))
+      array_slice_df <- as_tibble(array_slice_df)
+      
+      gt_sst_ngs_3d_part <- array_slice_df %>%
+        set_names(as.character(lat)) %>%
+        mutate(dep = -d) %>%
+        gather("lat", "value", 1:length(lat)) %>%
+        mutate(lat = as.numeric(lat)) %>%
+        filter(lat > low_lat, lat < high_lat,
+               dep >= d1_shallow, dep <= d1_deep) %>%
+        summarise_all("mean") %>%
+        mutate(var = var_3d,
+               date_time=t[i]) %>% 
+        dplyr::select(date_time, -dep, lat, value, var)
+      
+      
+      if (exists("gt_sst_ngs_3d")) {
+        gt_sst_ngs_3d <- bind_rows(gt_sst_ngs_3d, gt_sst_ngs_3d_part)
+        } else {gt_sst_ngs_3d <- gt_sst_ngs_3d_part}
+      
+  rm(array_slice, array_slice_df, gt_sst_ngs_3d_part)
+      
+    }
+
+rm(nc, time_units, t, d, array, fillvalue)
+
+}
+
+gt_sst_ngs_3d%>% 
+  vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_ngs_3d.csv"))
+
+rm(gt_sst_ngs_3d, n, file, filesList_3d, filesList_2d, d1_deep,d1_shallow,var_3d,lat,i)
+
+```
+
+## Preparation of Finnmaid data
+
+We want to compare the model data to the data actually measured by the VOS Finnmaid. Therefore, we need to prepare the Finnmaid data next.
+The file we open is called "FM_all_2019_on_standard_tracks.nc" and contains information for the time between 2003 and 2019 for route E.
+The data from the VOS Finnmaid are read in from a netcdf file created by Bittig & Müller.
+
+
+```{r read_finnmaid_data, eval=FALSE}
+
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+var <- "SST_east"
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+#dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+  #i <- 5
+  for (i in seq(1,length(route),1)){
+      
+    if(route[i] == select_route) {
+      slice <- array[i,]
+      
+      value <- mean(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      sd    <- sd(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      min   <- min(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      max   <- max(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      temp <- bind_cols(date = date, var=var, value = value, sd = sd, min = min, max = max)
+      
+      if (exists("fm_sst_ngs", inherits = FALSE)){
+        fm_sst_ngs <- bind_rows(fm_sst_ngs, temp)
+      } else{fm_sst_ngs <- temp}
+      
+      rm(temp, value, date, sd, min, max)
+      
+    } 
+  }
+nc_close(nc)
+
+fm_sst_ngs$date_time <- as.POSIXct(fm_sst_ngs$date) %>% 
+  cut.POSIXt(breaks = "days") %>% 
+  round.POSIXt(units = "days") %>% 
+  as.POSIXct(tz = "UTC")
+fm_sst_ngs <- fm_sst_ngs %>% 
+  select(-c(date))
+
+fm_sst_ngs %>% 
+  vroom_write(here::here("data/_summarized_data_files/", file = "fm_sst_ngs.csv"))
+rm(array, high_lat,low_lat, nc, slice, var, fm_sst_ngs, latitude_east, date_time, route,i)
+```
+
+
+## Compute SST differences
+
+In the following we compare Finnmaid and GETM data. Values are to be compared per day. Therefore, we need to calculate means per day before we continue.
+
+
+```{r calculate_daily_mean, eval=FALSE}
+
+gt_sst_ngs <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_ngs.csv"))
+gt_sst_ngs_3d <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_ngs_3d.csv"))
+
+gt_sst_ngs$date_time <- round_date(gt_sst_ngs$date_time, unit = "day")
+
+gt_sst_ngs_mean <- gt_sst_ngs %>% 
+  group_by(date_time) %>% 
+  summarise_all(list(~mean(.,na.rm = TRUE)))
+
+gt_sst_ngs_mean$var <- "SST"
+
+
+#comparison 
+# write Finnmaid and GETM data into one array
+
+fm_sst_ngs <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_sst_ngs.csv"))
+
+
+comparison_fm_gt_sst_ngs <- inner_join(fm_sst_ngs, gt_sst_ngs, by = "date_time")
+comparison_fm_gt_sst_ngs <- comparison_fm_gt_sst_ngs %>% 
+  select(date_time, Finnmaid_SST=value.x, GETM_SST=value.y)
+
+comparison_fm_gt_sst_ngs_3d <- inner_join(comparison_fm_gt_sst_ngs, gt_sst_ngs_3d, by = "date_time")
+comparison_fm_gt_sst_ngs_3d <- comparison_fm_gt_sst_ngs_3d %>% 
+  select(date_time, Finnmaid_SST, GETM_SST, GETM_SST_3d=value)
+
+comparison_fm_gt_sst_ngs_3d$difference <- comparison_fm_gt_sst_ngs_3d$Finnmaid_SST - comparison_fm_gt_sst_ngs_3d$GETM_SST_3d
+
+comparison_fm_gt_sst_ngs_3d %>% 
+  vroom_write(here::here("data/_merged_data_files/", file = "comparison_fm_gt_sst_ngs_3d.csv"))
+
+rm(fm_sst_ngs,comparison_fm_gt_sst_ngs_3d, gt_sst_ngs_mean)
+```
+
+## Timeseries plots
+
+Now we plot the SST against time for both timeseries, as well as the difference between both SST timeseries.
+
+```{r timeseries_dygraph, fig.asp=0.5}
+# create xts object for dygraph plot
+ts <- vroom::vroom(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_latrestriction.csv"))
+
+ts_xts <- xts(cbind(ts$Finnmaid_SST, ts$GETM_SST, ts$GETM_SST_3d), order.by = ts$date_time)
+names(ts_xts) <- c("Finnmaid", "GETM_SST", "GETM_2-4m")
+ts_dif_xts <- xts(ts$difference, order.by = ts$date_time)
+names(ts_dif_xts) <- "Difference"
+
+ts_xts %>% 
+  dygraph(group = "SST") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("GETM_SST") %>% 
+  dySeries("Finnmaid", color = "red") %>% 
+  dyAxis("y", label = "SST [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
+
+ts_dif_xts %>% 
+  dygraph(group = "SST") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("Difference") %>% 
+  dyAxis("y", label = "delta SST (Finnmaid - GETM 2-4m) [deg C]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
+            drawAxesAtZero=TRUE)
+
+rm(ts,ts_dif_xts,ts_xts)
+```
+
+# Basin-wide SST comparison
+
+The previous steps have been performed on only a restricted coordinate space. Now we want to analyse the differences in SST readings through time and space (distance to Travemuende [km]). 
+Again we prepare the data in a similar fashion as before, this time without coordinate restrictions.
+The route is divided in a 2km grid (startpoint: Travemuende). There are 544 coordinate points in every transect. Next to the exact longitute and latitute coordinates, the corresponding coordinate number (1:544) is added to the dataset. 
+
+## Preparation of Finnmaid data
+
+```{r hovmoeller_2d_data_finnmaid, eval=FALSE}
+
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+var <- "SST_east"
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+longitude_east <-ncvar_get(nc, "longitude_east")
+date_time_o <- ncvar_get(nc, "otime_east")
+
+  array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+  #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+  cor_vector <- c(1:544)
+
+  for (i in seq(1,length(route),1)){
+  
+      
+    if(route[i] == select_route) {
+      slice <- array[i,]          #define slice of the data, per row (per measurment day)
+      value <- slice
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      #if detailed date/time information is needed: uncomment that
+      #date <- as.Date(c(1:544))                  # set up "date" variable to be overwritten later, needs to be "Date" object
+      #for (a in seq(1,length(latitude_east),1)){              # for slice i the corresponding 544 transect steps are  
+      #temp_time <- ymd("2000-01-01") + date_time_o[i,a]       # adjoined by corresponding time ("otime_east")
+      #date[a] <- temp_time
+      #}
+      #temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east, 
+      #corvector =   cor_vector, date_time = date)
+      #temp$date_time <- as.POSIXct(temp$date_time)
+      
+      #when detailed time/date information is needed, comment the following
+      temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east,
+      corvector =  cor_vector)
+      temp$date <- date
+      #
+      
+      if (exists("fm_sst_hov", inherits = FALSE)){
+        fm_sst_hov <- bind_rows(fm_sst_hov, temp)
+      } else{fm_sst_hov <- temp}
+      
+      rm(temp, value, date)
+    }
+    print(i)
+  }
+
+nc_close(nc)
+
+
+fm_sst_hov <- fm_sst_hov %>% 
+  mutate(value_SST_Finn = value) %>% 
+  select(-c(value))
+
+fm_sst_hov %>% 
+  vroom_write(here::here("data/_summarized_data_files/", file = "fm_sst_hov.csv"))
+
+rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,longitude_east,route,i, fm_sst_hov)
+```
+
+## Preparation of GETM data
+
+The GETM data is prepared without coordinate restrictions. We use the SST readings of the GETM model. 
+
+```{r hovmoeller_2d_data_getm, eval=FALSE}
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+
+file <- filesList_2d[8]
+nc <- nc_open(paste("data/", file, sep = ""))
+
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+corvector <- c(1:544)
+nc_close(nc)
+
+var = "SST"
+
+rm(file, nc)
+
+for (n in 7:length(filesList_2d)) {
+
+#file <- filesList_2d[8]
+file <- filesList_2d[n]
+
+nc <- nc_open(paste("data/", file, sep = ""))
+#print(nc)
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+
+t <- time_units + ncvar_get(nc, "time")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+dim(array) # should be 2d with dimensions: 544 coordinate, 31d*(24h/d/3h)=248 time steps
+
+array <- as.data.frame(t(array), xy=TRUE)
+array <- as_tibble(array)
+
+#use corvector (1:544)
+gt_sst_hov_corvector <- array %>%
+  set_names(as.character(corvector)) %>%
+  mutate(date_time = t) %>%
+  gather("corvector", "value", 1:length(corvector)) %>%
+  mutate(corvector = as.numeric(corvector),
+  date = as.Date(date_time)) %>%
+  select(-date_time) %>% 
+  group_by(date, corvector) %>%
+  summarise_all("mean") %>%
+  ungroup() %>% 
+  rename(SST = value)
+
+# use lat and lon
+#gt_sst_hov_lat_lon <- array %>%
+#  set_names(as.character(lat)) %>%
+#  mutate(date_time = t) %>%
+#  gather("lat", "value", 1:length(lat)) %>%
+#  mutate(corvector = as.numeric(lat),
+#  date = as.Date(date_time)) %>%
+#  select(-date_time) %>% 
+#  group_by(date, lat) %>%
+#  summarise_all("mean") %>%
+#  ungroup() %>% 
+#  rename(SST = value)
+
+if (exists("gt_sst_hov")) {gt_sst_hov <- bind_rows(gt_sst_hov, gt_sst_hov_corvector)}
+        else {gt_sst_hov <- gt_sst_hov_corvector}
+
+nc_close(nc)
+rm(array, nc, t, time_units, gt_sst_hov_corvector)
+
+print(n)
+}
+
+gt_sst_hov %>% 
+  vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
+
+rm(gt_sst_hov, n, file, lon, lat, var, filesList_2d, corvector)
+```
+
+## Compute SST differences
+
+To compare the datasets, we use the `inner_join` function from the tidyverse. All rows on x (SST Finnmaid values) with matching values in y (SST GETM values) are returned and all columns of x and y. We drop all rows containing NAs, break down the date information to weeks. The differences between SST readings of GETM and Finnmaid are calculated two ways: 1) allowing negative values and 2) as absolute values. 
+
+
+```{r hovmoeller_2d_data_comparison, eval=FALSE}
+
+gt_sst_hov <- 
+  vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
+fm_sst_hov <- 
+  vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_sst_hov.csv"))
+
+gt_sst_hov <- gt_sst_hov %>% 
+  mutate(value_SST_GETM = SST) %>% 
+  select(-c(SST))
+
+
+gt_fm_sst_hov <-full_join(fm_sst_hov, gt_sst_hov, by = c("date", "corvector"))
+gt_fm_sst_hov_nadrop <- drop_na(gt_fm_sst_hov)
+
+gt_fm_sst_hov %>% 
+  vroom_write(here::here("data/_merged_data_files/", file = "gt_fm_sst_hov.csv"))
+gt_fm_sst_hov_nadrop %>% 
+  vroom_write(here::here("data/_merged_data_files/", file = "gt_fm_sst_hov_nadrop.csv"))
+  
+
+comparison_gt_fm_sst_hov <- gt_fm_sst_hov
+
+comparison_gt_fm_sst_hov$week <- as.Date(cut(comparison_gt_fm_sst_hov$date, breaks="weeks"))
+comparison_gt_fm_sst_hov$dist.trav <- comparison_gt_fm_sst_hov$corvector*2
+comparison_gt_fm_sst_hov$difference <- comparison_gt_fm_sst_hov$value_SST_Finn-comparison_gt_fm_sst_hov$value_SST_GETM
+
+# final data for hovmoeller plots
+comparison_gt_fm_sst_hov <- comparison_gt_fm_sst_hov %>%
+      select(value_SST_Finn, value_SST_GETM, difference,week, dist.trav) %>% 
+      dplyr::group_by(dist.trav, week) %>% 
+      summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
+      as.data.frame()
+
+comparison_gt_fm_sst_hov %>% 
+  vroom_write(here::here("data/_merged_data_files/", file = "comparison_gt_fm_sst_hov.csv"))
+
+rm(comparison_gt_fm_sst_hov,gt_fm_sst_hov,gt_sst_hov, fm_sst_hov)
+```
+
+## Hovmoeller plots
+
+### Daily GETM SST
+
+Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents GETM SST.
+
+```{r hovmoeller_GETM, fig.asp=5, fig.cap="Daily mean GETM SST as a function of time and the ships distance to Travemuende along route E."}
+
+gt_sst_hov <- 
+  vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
+
+gt_sst_hov <- gt_sst_hov %>% 
+  mutate(date = ymd(date), 
+         year = year(date),
+         dist.trav = corvector*2)
+
+gt_sst_hov %>% 
+  filter(year > 2006, year < 2019) %>% 
+  ggplot()+
+    geom_raster(aes(date, dist.trav, fill=SST))+
+      #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
+      scale_fill_viridis_c(name="GETM SST [°C]", option = "B")+
+      scale_x_date(expand = c(0,0))+
+      scale_y_continuous(expand = c(0,0))+
+      labs(y="Distance to Travemuende [km]")+
+      theme_bw()+
+      theme(
+        axis.title.x = element_blank(),
+        legend.position = "bottom",
+        legend.key.width = unit(1.3, "cm"),
+        legend.key.height = unit(0.3, "cm")
+      )+
+      facet_wrap(~year, ncol = 1, scales = "free_x")
+```
+
+### Weekly Finnmaid SST
+
+Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents weekly mean values of Finnmaid SST.
+
+
+```{r hovmoeller_Finnmaid, fig.asp=5, fig.cap="Mean weekly observed (Finnmaid) SST as a function of time and the ships distance to Travemuende along route E."}
+
+comparison_gt_fm_sst_hov <-
+    vroom::vroom(here::here("data/_merged_data_files/", file = "comparison_gt_fm_sst_hov.csv"))
+
+comparison_gt_fm_sst_hov <- comparison_gt_fm_sst_hov %>% 
+  mutate(year = year(week),
+         week = as.Date(week))
+
+comparison_gt_fm_sst_hov %>%
+  filter(year > 2006, year < 2019) %>% 
+    ggplot()+
+    geom_raster(aes(week, dist.trav, fill=value_SST_Finn_mean))+
+    #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
+    scale_fill_viridis_c(name="Finnmaid SST [°C]", na.value = "white", option = "B")+
+    scale_x_date(expand = c(0,0))+
+    scale_y_continuous(expand = c(0,0))+
+    labs(y="Distance to Travemuende [km]")+
+    theme_bw()+
+    theme(
+      axis.title.x = element_blank(),
+      legend.position = "bottom",
+      legend.key.width = unit(1.3, "cm"),
+      legend.key.height = unit(0.3, "cm")
+    )+
+    facet_wrap(~year, ncol = 1, scales = "free_x")
+```
+
+### SST difference
+
+Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents the difference between SST GETM and Finnmaid values. In this plot we can see, whether the model produces higher differences in certain areas for example. 
+
+```{r hovmoeller_Finmmaid-GETM, fig.asp=5, fig.cap="Mean weekly difference between modelled (GETM) and observed (Finnmaid) SST  as a function of time and the ships distance to Travemuende along route E."}
+
+comparison_gt_fm_sst_hov %>%
+  filter(year > 2006, year < 2019) %>% 
+    ggplot()+
+    geom_raster(aes(week, dist.trav, fill=difference_mean))+
+    #scale_fill_scico(palette = "vik", name="mean difference in SST [°C]")+
+    scale_fill_divergent(name="Mean weekly SST difference FM-GETM [°C]", na.value = "white",
+                         mid = 'grey')+
+    scale_x_date(expand = c(0,0))+
+    scale_y_continuous(expand = c(0,0))+
+    labs(y="Distance to Travemuende [km]")+
+    theme_bw()+
+    theme(
+      axis.title.x = element_blank(),
+      legend.position = "bottom",
+      legend.key.width = unit(1.3, "cm"),
+      legend.key.height = unit(0.3, "cm")
+    )+
+    facet_wrap(~year, ncol = 1, scales = "free_x")
+
+rm(comparison_gt_fm_sst_hov)
+```
