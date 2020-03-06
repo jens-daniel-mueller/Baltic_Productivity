@@ -1,0 +1,109 @@
+---
+title: "CT"
+author: "Jens Daniel Müller & Lara Burchardt"
+date:  "`r format(Sys.time(), '%d %B, %Y')`"
+output: 
+  workflowr::wflow_html:
+    number_sections: true
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+editor_options:
+  chunk_output_type: console
+---
+
+
+```{r global_options, include = FALSE}
+knitr::opts_chunk$set(warning=FALSE, message=FALSE)
+```
+
+```{r library, message=FALSE, warning=FALSE}
+
+library(tidyverse)
+library(ncdf4)
+library(vroom) #'rlang' needs to be installed
+library(lubridate)
+library(geosphere)
+library(dygraphs)
+library(xts)
+library(here)
+library(metR)
+
+```
+
+```{r subsetting_criteria}
+
+# route
+select_route <- "E"
+
+# variable names in 2d and 3d GETM files
+var <- "SSS_east"
+
+# latitude limits
+low_lat <- 57.5
+high_lat <- 58.5
+
+```
+
+# CT 
+
+Here we calculate the mean salinity across all measurments made between march - september in the NGS subregion. 
+
+```{r file_list_GETM_CT, eval=FALSE}
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+
+```
+
+```{r read_sss_data_fm_ngs}
+
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+#dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+  #i <- 5
+  for (i in seq(1,length(route),1)){
+  
+      
+    if(route[i] == select_route) {
+      slice <- array[i,]
+      
+      value <- mean(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      sd    <- sd(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      temp <- bind_cols(date = date, var=var, value = value, sd = sd)
+      
+      if (exists("timeseries", inherits = FALSE)){
+        timeseries <- bind_rows(timeseries, temp)
+      } else{timeseries <- temp}
+      
+      rm(temp, value, date, sd)
+      
+    } 
+  }
+nc_close(nc)
+
+fm_sss__ngs <- timeseries %>% 
+  mutate(sss = value,
+         year = year(date),
+         month = month(date))
+
+fm_sss_ngs_monthlymean <- fm_sss__ngs %>% 
+  filter(month >=3 , month <=9) %>% 
+  summarise_all(mean, na.rm = TRUE) %>% 
+  mutate(var = "SSS_east")
+```
+
+The mean salinity between March and September for the NGS subregion for all years is `r round(fm_sss_ngs_monthlymean$value,3)`.
