@@ -305,7 +305,7 @@ ts_pco2_xts %>%
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
             drawAxesAtZero=TRUE)
 
-rm(ts,ts_dif_xts,ts_xts)
+rm(ts_mld_pco2_ngs, ts_xts, ts_pco2_xts)
 ```
 
 # Basin-wide pCO2 and mixed layer depth
@@ -647,5 +647,5 @@ comparison_ts_mld_pco2_hov %>%
     )+
     facet_wrap(~year, ncol = 1, scales = "free_x")
 
-rm(ts_pvo2_hov, comparison_ts_mld_pco2_hov, ts_mld_pco2_hov)
+rm(ts_pco2_hov, comparison_ts_mld_pco2_hov, ts_mld_pco2_hov)
 ```

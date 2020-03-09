@@ -102,8 +102,7 @@ fm_sss__ngs <- timeseries %>%
 
 fm_sss_ngs_monthlymean <- fm_sss__ngs %>% 
   filter(month >=3 , month <=9) %>% 
-  summarise_all(mean, na.rm = TRUE) %>% 
-  mutate(var = "SSS_east")
+  summarise(sss_mean = mean(sss, na.rm = TRUE))
 ```
 
-The mean salinity between March and September for the NGS subregion for all years is `r round(fm_sss_ngs_monthlymean$value,3)`.
+The mean salinity between March and September for the NGS subregion for all years is `r fm_sss_ngs_monthlymean`.

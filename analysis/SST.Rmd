@@ -311,7 +311,7 @@ Now we plot the SST against time for both timeseries, as well as the difference 
 
 ```{r timeseries_dygraph, fig.asp=0.5}
 # create xts object for dygraph plot
-ts <- vroom::vroom(here::here("data/_merged_data_files/", file = "Finnmaid_GETM_mean_SST_latrestriction.csv"))
+ts <- vroom::vroom(here::here("data/_merged_data_files/", file = "comparison_fm_gt_sst_ngs_3d.csv"))
 
 ts_xts <- xts(cbind(ts$Finnmaid_SST, ts$GETM_SST, ts$GETM_SST_3d), order.by = ts$date_time)
 names(ts_xts) <- c("Finnmaid", "GETM_SST", "GETM_2-4m")
@@ -513,12 +513,12 @@ gt_sst_hov <- gt_sst_hov %>%
 
 
 gt_fm_sst_hov <-full_join(fm_sst_hov, gt_sst_hov, by = c("date", "corvector"))
-gt_fm_sst_hov_nadrop <- drop_na(gt_fm_sst_hov)
+# gt_fm_sst_hov_nadrop <- drop_na(gt_fm_sst_hov)
 
 gt_fm_sst_hov %>% 
   vroom_write(here::here("data/_merged_data_files/", file = "gt_fm_sst_hov.csv"))
-gt_fm_sst_hov_nadrop %>% 
-  vroom_write(here::here("data/_merged_data_files/", file = "gt_fm_sst_hov_nadrop.csv"))
+# gt_fm_sst_hov_nadrop %>% 
+#   vroom_write(here::here("data/_merged_data_files/", file = "gt_fm_sst_hov_nadrop.csv"))
   
 
 comparison_gt_fm_sst_hov <- gt_fm_sst_hov

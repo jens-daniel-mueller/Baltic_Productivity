@@ -10,6 +10,17 @@ editor_options:
 
 On this website we present our ongoing ambition to quantify net primary production in the surface waters of the Central Baltic Sea. We try to compile the most accurate estimate by following a multi-observatory approach, merging observations from VOS Finnmaid, the hydrographical GETM model, ARGO floats and satellites.
 
+Aim of the project
+
+Two datasets are compared describing the sea surface temperature (SST) in the Central Baltic Sea. Observational data are provided by the VOS Finnmaid, measuring (amongst others) SST, pCO~2~, O~2~, and sea surface salinity (SSS) every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water (3m).
+
+The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. GETM results are available as 2d (surface values only, 3h resolution) and 3d (full water column data, 1day resolution) data files.
+
+Data are saved in the netcdf format. We describe how to read in the data, compare the relevant variables to finally visualize the relation between both SST estimates.
+
+The documentation of the project is realized with `workflowr`, combining `R Markdown` with the version control Github as input for this webside. The following packages are needed.
+
+
 Please navigate trough the navbar on top to take a look at the various chapters of this project.
 The links in the upper right corner bring you to the source code of this project and back to Jens' main homepage.
 
