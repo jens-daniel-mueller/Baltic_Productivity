@@ -538,10 +538,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree9332caee3a1a08b301da21b78b052e3c45c0b9cftargetblank9332caea"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/9332caee3a1a08b301da21b78b052e3c45c0b9cf" target="_blank">9332cae</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree92adedd44a3c49f26abc4285fbfacbeea29a9247targetblank92adedda"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/92adedd44a3c49f26abc4285fbfacbeea29a9247" target="_blank">92adedd</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree9332caee3a1a08b301da21b78b052e3c45c0b9cftargetblank9332caea" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree92adedd44a3c49f26abc4285fbfacbeea29a9247targetblank92adedda" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -585,11 +585,16 @@ There are no past versions. Publish this analysis with <code>wflow_publish()</co
 </div>
 </div>
 </div>
+<div id="data-base" class="section level1">
+<h1><span class="header-section-number">1</span> Data base</h1>
+<p>Two datasets are compared describing the sea surface temperature (SST) in the Central Baltic Sea. Observational data are provided by the VOS Finnmaid, measuring (amongst others) SST, pCO<sub>2</sub>, O<sub>2</sub>, and sea surface salinity (SSS) every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water (3m).</p>
+<p>The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. GETM results are available as 2d (surface values only, 3h resolution) and 3d (full water column data, 1day resolution) data files.</p>
+</div>
 <div id="regional-sst-comparison" class="section level1">
-<h1><span class="header-section-number">1</span> Regional SST Comparison</h1>
+<h1><span class="header-section-number">2</span> Regional SST Comparison</h1>
 <p>In a first approach, investigations are restricted to the daily mean values in the latitude range 57.5 - 58.5 deg N. The investigated variable is SST.</p>
 <div id="preparation-of-getm-data" class="section level2">
-<h2><span class="header-section-number">1.1</span> Preparation of GETM data</h2>
+<h2><span class="header-section-number">2.1</span> Preparation of GETM data</h2>
 <p>As a first step we want to prepare the data from the GETM model to compare it later. We have some specifications, which files we want to look at first, because we only look at the models from a specific track, which is the Finnmaid track, route E. We want a list of all the 2d-files in our modeldata set, that include the <code>pattern = "Finnmaid.E.2d"</code>. This pattern is to be searched for in all folders and subfolders of the current working directory, we achieve that by setting <code>recursive = TRUE</code>.</p>
 <pre class="r"><code>filesList_2d &lt;- list.files(path= &quot;data&quot;, pattern = &quot;Finnmaid.E.2d&quot;, recursive = TRUE)</code></pre>
 <p>We now loop through all the files in <code>fileList</code> we created before, to perform the data preparations and save the new arrays. To open a file in the netcdf format we use the openning function of the <code>ncdf4</code> package.</p>
@@ -714,7 +719,7 @@ gt_sst_ngs_3d%&gt;%
 rm(gt_sst_ngs_3d, n, file, filesList_3d, filesList_2d, d1_deep,d1_shallow,var_3d,lat,i)</code></pre>
 </div>
 <div id="preparation-of-finnmaid-data" class="section level2">
-<h2><span class="header-section-number">1.2</span> Preparation of Finnmaid data</h2>
+<h2><span class="header-section-number">2.2</span> Preparation of Finnmaid data</h2>
 <p>We want to compare the model data to the data actually measured by the VOS Finnmaid. Therefore, we need to prepare the Finnmaid data next. The file we open is called “FM_all_2019_on_standard_tracks.nc” and contains information for the time between 2003 and 2019 for route E. The data from the VOS Finnmaid are read in from a netcdf file created by Bittig &amp; Müller.</p>
 <pre class="r"><code>nc &lt;- nc_open(paste(&quot;data/Finnmaid/&quot;, &quot;FM_all_2019_on_standard_tracks.nc&quot;, sep = &quot;&quot;))
 
@@ -769,7 +774,7 @@ fm_sst_ngs %&gt;%
 rm(array, high_lat,low_lat, nc, slice, var, fm_sst_ngs, latitude_east, date_time, route,i)</code></pre>
 </div>
 <div id="compute-sst-differences" class="section level2">
-<h2><span class="header-section-number">1.3</span> Compute SST differences</h2>
+<h2><span class="header-section-number">2.3</span> Compute SST differences</h2>
 <p>In the following we compare Finnmaid and GETM data. Values are to be compared per day. Therefore, we need to calculate means per day before we continue.</p>
 <pre class="r"><code>gt_sst_ngs &lt;- vroom::vroom(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;gt_sst_ngs.csv&quot;))
 gt_sst_ngs_3d &lt;- vroom::vroom(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;gt_sst_ngs_3d.csv&quot;))
@@ -805,7 +810,7 @@ comparison_fm_gt_sst_ngs_3d %&gt;%
 rm(fm_sst_ngs,comparison_fm_gt_sst_ngs_3d, gt_sst_ngs_mean)</code></pre>
 </div>
 <div id="timeseries-plots" class="section level2">
-<h2><span class="header-section-number">1.4</span> Timeseries plots</h2>
+<h2><span class="header-section-number">2.4</span> Timeseries plots</h2>
 <p>Now we plot the SST against time for both timeseries, as well as the difference between both SST timeseries.</p>
 <pre class="r"><code># create xts object for dygraph plot
 ts &lt;- vroom::vroom(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;comparison_fm_gt_sst_ngs_3d.csv&quot;))
@@ -837,10 +842,10 @@ ts_xts %&gt;%
 </div>
 </div>
 <div id="basin-wide-sst-comparison" class="section level1">
-<h1><span class="header-section-number">2</span> Basin-wide SST comparison</h1>
+<h1><span class="header-section-number">3</span> Basin-wide SST comparison</h1>
 <p>The previous steps have been performed on only a restricted coordinate space. Now we want to analyse the differences in SST readings through time and space (distance to Travemuende [km]). Again we prepare the data in a similar fashion as before, this time without coordinate restrictions. The route is divided in a 2km grid (startpoint: Travemuende). There are 544 coordinate points in every transect. Next to the exact longitute and latitute coordinates, the corresponding coordinate number (1:544) is added to the dataset.</p>
 <div id="preparation-of-finnmaid-data-1" class="section level2">
-<h2><span class="header-section-number">2.1</span> Preparation of Finnmaid data</h2>
+<h2><span class="header-section-number">3.1</span> Preparation of Finnmaid data</h2>
 <pre class="r"><code>nc &lt;- nc_open(paste(&quot;data/Finnmaid/&quot;, &quot;FM_all_2019_on_standard_tracks.nc&quot;, sep = &quot;&quot;))
 
 var &lt;- &quot;SST_east&quot;
@@ -908,7 +913,7 @@ fm_sst_hov %&gt;%
 rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,longitude_east,route,i, fm_sst_hov)</code></pre>
 </div>
 <div id="preparation-of-getm-data-1" class="section level2">
-<h2><span class="header-section-number">2.2</span> Preparation of GETM data</h2>
+<h2><span class="header-section-number">3.2</span> Preparation of GETM data</h2>
 <p>The GETM data is prepared without coordinate restrictions. We use the SST readings of the GETM model.</p>
 <pre class="r"><code>filesList_2d &lt;- list.files(path= &quot;data&quot;, pattern = &quot;Finnmaid.E.2d&quot;, recursive = TRUE)
 
@@ -985,7 +990,7 @@ gt_sst_hov %&gt;%
 rm(gt_sst_hov, n, file, lon, lat, var, filesList_2d, corvector)</code></pre>
 </div>
 <div id="compute-sst-differences-1" class="section level2">
-<h2><span class="header-section-number">2.3</span> Compute SST differences</h2>
+<h2><span class="header-section-number">3.3</span> Compute SST differences</h2>
 <p>To compare the datasets, we use the <code>inner_join</code> function from the tidyverse. All rows on x (SST Finnmaid values) with matching values in y (SST GETM values) are returned and all columns of x and y. We drop all rows containing NAs, break down the date information to weeks. The differences between SST readings of GETM and Finnmaid are calculated two ways: 1) allowing negative values and 2) as absolute values.</p>
 <pre class="r"><code>gt_sst_hov &lt;- 
   vroom::vroom(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;gt_sst_hov.csv&quot;))
@@ -1025,9 +1030,9 @@ comparison_gt_fm_sst_hov %&gt;%
 rm(comparison_gt_fm_sst_hov,gt_fm_sst_hov,gt_sst_hov, fm_sst_hov)</code></pre>
 </div>
 <div id="hovmoeller-plots" class="section level2">
-<h2><span class="header-section-number">2.4</span> Hovmoeller plots</h2>
+<h2><span class="header-section-number">3.4</span> Hovmoeller plots</h2>
 <div id="daily-getm-sst" class="section level3">
-<h3><span class="header-section-number">2.4.1</span> Daily GETM SST</h3>
+<h3><span class="header-section-number">3.4.1</span> Daily GETM SST</h3>
 <p>Hovmoeller Plots are generated with <code>ggplot</code> and <code>geom_raster</code>. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents GETM SST.</p>
 <pre class="r"><code>gt_sst_hov &lt;- 
   vroom::vroom(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;gt_sst_hov.csv&quot;))
@@ -1062,7 +1067,7 @@ Daily mean GETM SST as a function of time and the ships distance to Travemuende 
 </div>
 </div>
 <div id="weekly-finnmaid-sst" class="section level3">
-<h3><span class="header-section-number">2.4.2</span> Weekly Finnmaid SST</h3>
+<h3><span class="header-section-number">3.4.2</span> Weekly Finnmaid SST</h3>
 <p>Hovmoeller Plots are generated with <code>ggplot</code> and <code>geom_raster</code>. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents weekly mean values of Finnmaid SST.</p>
 <pre class="r"><code>comparison_gt_fm_sst_hov &lt;-
     vroom::vroom(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;comparison_gt_fm_sst_hov.csv&quot;))
@@ -1096,7 +1101,7 @@ Mean weekly observed (Finnmaid) SST as a function of time and the ships distance
 </div>
 </div>
 <div id="sst-difference" class="section level3">
-<h3><span class="header-section-number">2.4.3</span> SST difference</h3>
+<h3><span class="header-section-number">3.4.3</span> SST difference</h3>
 <p>Hovmoeller Plots are generated with <code>ggplot</code> and <code>geom_raster</code>. On the x axis we find the date, the y axis represents the distance to Travemuend in kilometers and the color coding represents the difference between SST GETM and Finnmaid values. In this plot we can see, whether the model produces higher differences in certain areas for example.</p>
 <pre class="r"><code>comparison_gt_fm_sst_hov %&gt;%
   filter(year &gt; 2006, year &lt; 2019) %&gt;% 
