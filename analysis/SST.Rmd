@@ -48,6 +48,13 @@ d1_shallow <- 2
 d1_deep <- 4
 
 ```
+
+# Data base
+
+Two datasets are compared describing the sea surface temperature (SST) in the Central Baltic Sea. Observational data are provided by the VOS Finnmaid, measuring (amongst others) SST, pCO~2~, O~2~, and sea surface salinity (SSS) every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water (3m).
+
+The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. GETM results are available as 2d (surface values only, 3h resolution) and 3d (full water column data, 1day resolution) data files.
+
 # Regional SST Comparison
 
 In a first approach, investigations are restricted to the daily mean values in the latitude range `r low_lat` - `r high_lat` deg N. The investigated variable is `r var`.
