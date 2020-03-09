@@ -281,7 +281,13 @@ $(document).ready(function () {
   <a href="index.html">Home</a>
 </li>
 <li>
-  <a href="Finnmaid-GETM.html">Finnmaid-GETM</a>
+  <a href="SST.html">SST</a>
+</li>
+<li>
+  <a href="MLD_pCO2.html">MLD_pCO2</a>
+</li>
+<li>
+  <a href="CT.html">CT</a>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
@@ -348,7 +354,7 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-01-19
+<strong>Last updated:</strong> 2020-03-09
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -379,10 +385,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree8861cf7ac2d39077bd194df5a950ea93f72c48b4targetblank8861cf7a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/8861cf7ac2d39077bd194df5a950ea93f72c48b4" target="_blank">8861cf7</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree9332caee3a1a08b301da21b78b052e3c45c0b9cftargetblank9332caea"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/9332caee3a1a08b301da21b78b052e3c45c0b9cf" target="_blank">9332cae</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree8861cf7ac2d39077bd194df5a950ea93f72c48b4targetblank8861cf7a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree9332caee3a1a08b301da21b78b052e3c45c0b9cftargetblank9332caea" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -398,8 +404,15 @@ Ignored files:
     Ignored:    data/_merged_data_files/
     Ignored:    data/_summarized_data_files/
 
+Untracked files:
+    Untracked:  code/Finnmaid-GETM.Rmd
+    Untracked:  code/SSS.Rmd
+
 Unstaged changes:
-    Deleted:    analysis/child_mld_GETM.Rmd
+    Deleted:    analysis/CT.knit.md
+    Deleted:    analysis/CT.utf8.md
+    Deleted:    analysis/Finnmaid-GETM.Rmd
+    Deleted:    analysis/SSS.Rmd
 
 </code></pre>
 <p>
@@ -420,6 +433,11 @@ There are no past versions. Publish this analysis with <code>wflow_publish()</co
 </div>
 </div>
 <p>On this website we present our ongoing ambition to quantify net primary production in the surface waters of the Central Baltic Sea. We try to compile the most accurate estimate by following a multi-observatory approach, merging observations from VOS Finnmaid, the hydrographical GETM model, ARGO floats and satellites.</p>
+<p>Aim of the project</p>
+<p>Two datasets are compared describing the sea surface temperature (SST) in the Central Baltic Sea. Observational data are provided by the VOS Finnmaid, measuring (amongst others) SST, pCO<sub>2</sub>, O<sub>2</sub>, and sea surface salinity (SSS) every minute while commuting between Travemünde and Helsinki. Measurments are taken from the surface water (3m).</p>
+<p>The second dataset comprises GETM model data providing information and values for all water depths and locations along the Finnmaid track. GETM results are available as 2d (surface values only, 3h resolution) and 3d (full water column data, 1day resolution) data files.</p>
+<p>Data are saved in the netcdf format. We describe how to read in the data, compare the relevant variables to finally visualize the relation between both SST estimates.</p>
+<p>The documentation of the project is realized with <code>workflowr</code>, combining <code>R Markdown</code> with the version control Github as input for this webside. The following packages are needed.</p>
 <p>Please navigate trough the navbar on top to take a look at the various chapters of this project. The links in the upper right corner bring you to the source code of this project and back to Jens’ main homepage.</p>
 <p>Dr. Jens Daniel Müller, 2019</p>
 
