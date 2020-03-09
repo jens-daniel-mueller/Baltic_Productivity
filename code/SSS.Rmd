@@ -105,7 +105,7 @@ fm_sss_corvector <- timeseries_sss_fm %>%
 
   for (cor in 1:544){
     
-    temp <- finnmaid_sss_corvector %>% 
+    temp <- fm_sss_corvector %>% 
       filter(corvector == cor) %>% 
       select(month, corvector, sss) %>% 
       group_by(month, corvector) %>% 
@@ -122,7 +122,7 @@ monthly_salinity_fm %>%
 vroom_write(here::here("data/_summarized_data_files/", file = "fm_monthly_salinity_perTransect.csv"))
 
 
-rm(monthly_salinity_fm, temp, finnmaid_sss_corvector, timeseries_sss_fm)
+rm(monthly_salinity_fm, temp, fm_sss_corvector, timeseries_sss_fm)
 ```
 
 ```{r scatterplot_salinity}
