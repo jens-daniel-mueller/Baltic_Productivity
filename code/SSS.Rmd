@@ -87,9 +87,9 @@ date_time_o <- ncvar_get(nc, "otime_east")
       temp$date <- date
       # 
       
-      if (exists("timeseries_sss_fm", inherits = FALSE)){
-        timeseries <- bind_rows(timeseries_sss_fm, temp)
-      } else{timeseries_sss_fm <- temp}
+      if (exists("fm_sss", inherits = FALSE)){
+        fm_sss <- bind_rows(fm_sss, temp)
+      } else{fm_sss <- temp}
       
       rm(temp, value, date)
     }
@@ -98,10 +98,11 @@ date_time_o <- ncvar_get(nc, "otime_east")
 
 nc_close(nc)
 
-fm_sss_corvector <- timeseries_sss_fm %>% 
-  mutate(sss = value,
+fm_sss_corvector <- fm_sss %>% 
+  transmute(sss = value,
          year = year(date),
-         month = month(date))
+         month = month(date),
+         corvector = corvector )
 
   for (cor in 1:544){
     
@@ -111,34 +112,39 @@ fm_sss_corvector <- timeseries_sss_fm %>%
       group_by(month, corvector) %>% 
       summarise_all(mean, na.rm = TRUE)
     
-    if (exists("monthly_salinity_fm", inherits = FALSE)){
-        monthly_salinity <- bind_rows(monthly_salinity_fm, temp)
-      } else{monthly_salinity_fm <- temp}
-    
+    if (exists("fm_sss_monthly", inherits = FALSE)){
+        fm_sss_monthly <- bind_rows(fm_sss_monthly, temp)
+      } else{fm_sss_monthly <- temp}
+    rm(temp)
   }
   
 
-monthly_salinity_fm %>% 
-vroom_write(here::here("data/_summarized_data_files/", file = "fm_monthly_salinity_perTransect.csv"))
+fm_sss_monthly %>% 
+vroom_write(here::here("data/_summarized_data_files/", file = "fm_sss_monthly_perTransect.csv"))
 
 
-rm(monthly_salinity_fm, temp, fm_sss_corvector, timeseries_sss_fm)
+rm(fm_sss_monthly,  fm_sss_corvector, var, select_route)
 ```
 
 ```{r scatterplot_salinity}
 
-monthly_salinity_fm <- read_csv(
-  here::here("data/_summarized_data_files",
-             "fm_monthly_salinity_perTransect.csv"))
+fm_sss_monthly <- vroom::vroom(
+  here::here("data/_summarized_data_files","fm_sss_monthly_perTransect.csv"))
 
-monthly_salinity_fm <- monthly_salinity_fm %>% 
-  mutate(month = as.factor(month),
-         dist.trav = corvector * 2)
+fm_sss_monthly <- fm_sss_monthly %>% 
+  mutate(dist.trav = corvector * 2,
+         month_factor = as.factor(month))
 
-monthly_salinity_fm %>% 
-  ggplot(aes(dist.trav, sss, color = month))+
-  geom_path()+
+fm_sss_monthly %>% 
+  ggplot(aes(dist.trav, sss, color = month_factor))+
+  geom_point(size = 0.1)+
   labs(x="Distance to Travemuende [km]",
        y="Surface Salinity")+
-  theme_bw()
+  theme_bw()+
+  scale_colour_brewer(palette = "Paired",
+                      type = "qual",
+                      name = "Month",
+                      labels = c("January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"))
+
+rm(fm_sss_monthly)
 ```

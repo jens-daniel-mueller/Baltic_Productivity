@@ -66,7 +66,7 @@ As a first step we want to prepare the data from the GETM model to compare it la
 
 ```{r file_list_GETM_2d, eval=FALSE}
 
-filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive = TRUE)
 
 ```
 
@@ -75,16 +75,16 @@ To open a file in the netcdf format we use the openning function of the `ncdf4` 
 
 ```{r read_GETM_data_2d, eval=FALSE}
 
-for (n in 7:length(filesList_2d)) {
+for (n in 1:length(filesList_2d)) {
 
 #file <- filesList_2d[8]
 file <- filesList_2d[n]
 
 nc <- nc_open(paste("data/", file, sep = ""))
 
-print(nc)
-attributes(nc$var)
-attributes(nc$dim)
+#print(nc)
+#attributes(nc$var)
+#attributes(nc$dim)
 
 lat <- ncvar_get(nc, "latc", verbose = F)
 
@@ -117,7 +117,7 @@ if (exists("gt_sst_ngs")) {gt_sst_ngs <- bind_rows(gt_sst_ngs, gt_sst_ngs_part)}
         else {gt_sst_ngs <- gt_sst_ngs_part}
 
 nc_close(nc)
-rm(array, nc, t, lat, lon)
+rm(array, nc, t,lat, gt_sst_ngs_part)
 
 }
 
@@ -132,7 +132,7 @@ In a similar fashion we loop through all 3d GETM data files, and extract the SST
 
 ```{r file_list_GETM_3d}
 
-filesList_3d <- list.files(path= "data", pattern = "Finnmaid.E.3d.z.nc", recursive = TRUE)
+filesList_3d <- list.files(path= "data", pattern = "Finnmaid.E.3d.20", recursive = TRUE)
 
 ```
 
@@ -145,7 +145,7 @@ lat <- ncvar_get(nc, "latc", verbose = F)
 nc_close(nc)
 
 
-for (n in 7:length(filesList_3d)) {
+for (n in 1:length(filesList_3d)) {
 
 #file <- filesList_3d[8]
 file <- filesList_3d[n]
@@ -427,7 +427,7 @@ The GETM data is prepared without coordinate restrictions. We use the SST readin
 
 ```{r hovmoeller_2d_data_getm, eval=FALSE}
 
-filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive = TRUE)
 
 file <- filesList_2d[8]
 nc <- nc_open(paste("data/", file, sep = ""))
@@ -441,7 +441,7 @@ var = "SST"
 
 rm(file, nc)
 
-for (n in 7:length(filesList_2d)) {
+for (n in 1:length(filesList_2d)) {
 
 #file <- filesList_2d[8]
 file <- filesList_2d[n]
@@ -499,7 +499,7 @@ print(n)
 gt_sst_hov %>% 
   vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
 
-rm(gt_sst_hov, n, file, lon, lat, var, filesList_2d, corvector)
+rm(gt_sst_hov, n, file, lat, var, filesList_2d, corvector)
 ```
 
 ## Compute SST differences

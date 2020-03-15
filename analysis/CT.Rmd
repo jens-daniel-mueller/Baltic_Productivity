@@ -51,7 +51,7 @@ Here we calculate the mean salinity across all measurments made between march - 
 
 ```{r file_list_GETM_CT, eval=FALSE}
 
-filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d", recursive = TRUE)
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive = TRUE)
 
 ```
 
@@ -106,3 +106,26 @@ fm_sss_ngs_monthlymean <- fm_sss__ngs %>%
 ```
 
 The mean salinity between March and September for the NGS subregion for all years is `r fm_sss_ngs_monthlymean`.
+
+# CT Plot
+
+In the following section, we create a dygraph with two y-axis, combining the pCO2 measurments from VOS Finnmaid with the MLD5 calculations of the GETM Model.
+
+```{r plot_mld__pco2_data_ngs}
+gt_mld_fm_pco2_ngs <-
+vroom::vroom(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+
+
+
+temperature <- ts(frequency = 12, start = c(1980, 1),
+  data = c(7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 
+           25.2, 26.5, 23.3, 18.3, 13.9, 9.6))
+rainfall <- ts(frequency = 12, start = c(1980, 1),
+  data = c(49.9, 71.5, 106.4, 129.2, 144.0, 176.0, 
+           135.6, 148.5, 216.4, 194.1, 95.6, 54.4))
+weather <- cbind(rainfall, temperature)
+
+# assign the "rainfall" series to the y2 axis
+dygraph(weather) %>%
+  dySeries("rainfall", axis = 'y2')
+```
