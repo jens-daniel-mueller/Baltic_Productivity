@@ -12,7 +12,7 @@
 <meta name="author" content="Jens Daniel Müller &amp; Lara Burchardt" />
 
 
-<title>CT</title>
+<title>SSS</title>
 
 <script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -27,14 +27,6 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<script src="site_libs/htmlwidgets-1.5.1/htmlwidgets.js"></script>
-<link href="site_libs/dygraphs-1.1.1/dygraph.css" rel="stylesheet" />
-<script src="site_libs/dygraphs-1.1.1/dygraph-combined.js"></script>
-<script src="site_libs/dygraphs-1.1.1/shapes.js"></script>
-<script src="site_libs/moment-2.8.4/moment.js"></script>
-<script src="site_libs/moment-timezone-0.2.5/moment-timezone-with-data.js"></script>
-<script src="site_libs/moment-fquarter-1.0.0/moment-fquarter.min.js"></script>
-<script src="site_libs/dygraphs-binding-1.1.1.6/dygraphs.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
@@ -423,7 +415,7 @@ div.section {
 
 
 
-<h1 class="title toc-ignore">CT</h1>
+<h1 class="title toc-ignore">SSS</h1>
 <h4 class="author">Jens Daniel Müller &amp; Lara Burchardt</h4>
 <h4 class="date">16 March, 2020</h4>
 
@@ -583,28 +575,9 @@ There are no past versions. Publish this analysis with <code>wflow_publish()</co
 </div>
 </div>
 </div>
-<pre class="r"><code>library(tidyverse)
-library(ncdf4)
-library(vroom) #&#39;rlang&#39; needs to be installed
-library(lubridate)
-library(geosphere)
-library(dygraphs)
-library(xts)
-library(here)
-library(metR)</code></pre>
-<pre class="r"><code># route
-select_route &lt;- &quot;E&quot;
-
-# variable names in 2d and 3d GETM files
-var &lt;- &quot;SSS_east&quot;
-
-# latitude limits
-low_lat &lt;- 57.5
-high_lat &lt;- 58.5</code></pre>
-<div id="ct" class="section level1">
-<h1><span class="header-section-number">1</span> CT</h1>
-<p>Here we calculate the mean salinity across all measurments made between march - september in the NGS subregion.</p>
-<pre class="r"><code>filesList_2d &lt;- list.files(path= &quot;data&quot;, pattern = &quot;Finnmaid.E.2d.20&quot;, recursive = TRUE)</code></pre>
+<div id="medium-salinity" class="section level1">
+<h1><span class="header-section-number">1</span> Medium Salinity</h1>
+<p>In the following section, we want to calculate the medium salinity per month and transect section. We will therefore end up with 544 x 12 salinity values.</p>
 <pre class="r"><code>nc &lt;- nc_open(paste(&quot;data/Finnmaid/&quot;, &quot;FM_all_2019_on_standard_tracks.nc&quot;, sep = &quot;&quot;))
 
 # read required vectors from netcdf file
@@ -612,68 +585,98 @@ route &lt;- ncvar_get(nc, &quot;route&quot;)
 route &lt;- unlist(strsplit(route, &quot;&quot;))
 date_time &lt;- ncvar_get(nc, &quot;time&quot;)
 latitude_east &lt;- ncvar_get(nc, &quot;latitude_east&quot;)
+longitude_east &lt;-ncvar_get(nc, &quot;longitude_east&quot;)
+date_time_o &lt;- ncvar_get(nc, &quot;otime_east&quot;)
 
-array &lt;- ncvar_get(nc, var) # store the data in a 2-dimensional array
-#dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  array &lt;- ncvar_get(nc, var) # store the data in a 2-dimensional array
+  #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
   
   fillvalue &lt;- ncatt_get(nc, var, &quot;_FillValue&quot;)
   array[array == fillvalue$value] &lt;- NA
   rm(fillvalue)
   
-  #i &lt;- 5
+  cor_vector &lt;- c(1:544)
+  
   for (i in seq(1,length(route),1)){
   
       
     if(route[i] == select_route) {
-      slice &lt;- array[i,]
-      
-      value &lt;- mean(slice[latitude_east &gt; low_lat &amp; latitude_east &lt; high_lat], na.rm = TRUE)
-      sd    &lt;- sd(slice[latitude_east &gt; low_lat &amp; latitude_east &lt; high_lat], na.rm = TRUE)
+      slice &lt;- array[i,]          #define slice of the data, per row (per measurment day)
+      value &lt;- slice
       date &lt;- ymd(&quot;2000-01-01&quot;) + date_time[i]
       
-      temp &lt;- bind_cols(date = date, var=var, value = value, sd = sd)
+      #if detailed date/time information is needed: uncomment that
+      #date &lt;- as.Date(c(1:544))   # set up &quot;date&quot; variable to be overwritten later, needs to be &quot;Date&quot; object
+      #for (a in seq(1,length(latitude_east),1)){              # for slice i the corresponding 544 transect steps are  
+      #temp_time &lt;- ymd(&quot;2000-01-01&quot;) + date_time_o[i,a]       # adjoined by corresponding time (&quot;otime_east&quot;)
+      #date[a] &lt;- temp_time
+      #}
+      #temp &lt;- bind_cols(value = value, lon = longitude_east, lat = latitude_east, 
+      #corvector =   cor_vector, date_time = date)
+      #temp$date_time &lt;- as.POSIXct(temp$date_time)
       
-      if (exists(&quot;timeseries&quot;, inherits = FALSE)){
-        timeseries &lt;- bind_rows(timeseries, temp)
-      } else{timeseries &lt;- temp}
+      #when detailed time/date information is needed, comment the following
+      temp &lt;- bind_cols(value = value, lon = longitude_east, lat = latitude_east,
+      corvector =  cor_vector)
+      temp$date &lt;- date
+      # 
       
-      rm(temp, value, date, sd)
+      if (exists(&quot;fm_sss&quot;, inherits = FALSE)){
+        fm_sss &lt;- bind_rows(fm_sss, temp)
+      } else{fm_sss &lt;- temp}
       
-    } 
+      rm(temp, value, date)
+    }
+    print(i)
   }
+
 nc_close(nc)
 
-fm_sss__ngs &lt;- timeseries %&gt;% 
-  mutate(sss = value,
+fm_sss_corvector &lt;- fm_sss %&gt;% 
+  transmute(sss = value,
          year = year(date),
-         month = month(date))
+         month = month(date),
+         corvector = corvector )
 
-fm_sss_ngs_monthlymean &lt;- fm_sss__ngs %&gt;% 
-  filter(month &gt;=3 , month &lt;=9) %&gt;% 
-  summarise(sss_mean = mean(sss, na.rm = TRUE))</code></pre>
-<p>The mean salinity between March and September for the NGS subregion for all years is 6.7291982.</p>
-</div>
-<div id="ct-plot" class="section level1">
-<h1><span class="header-section-number">2</span> CT Plot</h1>
-<p>In the following section, we create a dygraph with two y-axis, combining the pCO2 measurments from VOS Finnmaid with the MLD5 calculations of the GETM Model.</p>
-<pre class="r"><code>gt_mld_fm_pco2_ngs &lt;-
-vroom::vroom(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;gt_mld_fm_pco2_ngs.csv&quot;))
+  for (cor in 1:544){
+    
+    temp &lt;- fm_sss_corvector %&gt;% 
+      filter(corvector == cor) %&gt;% 
+      select(month, corvector, sss) %&gt;% 
+      group_by(month, corvector) %&gt;% 
+      summarise_all(mean, na.rm = TRUE)
+    
+    if (exists(&quot;fm_sss_monthly&quot;, inherits = FALSE)){
+        fm_sss_monthly &lt;- bind_rows(fm_sss_monthly, temp)
+      } else{fm_sss_monthly &lt;- temp}
+    rm(temp)
+  }
+  
+
+fm_sss_monthly %&gt;% 
+vroom_write(here::here(&quot;data/_summarized_data_files/&quot;, file = &quot;fm_sss_monthly_perTransect.csv&quot;))
 
 
+rm(fm_sss_monthly,  fm_sss_corvector, var, select_route)</code></pre>
+<pre class="r"><code>fm_sss_monthly &lt;- vroom::vroom(
+  here::here(&quot;data/_summarized_data_files&quot;,&quot;fm_sss_monthly_perTransect.csv&quot;))
 
-temperature &lt;- ts(frequency = 12, start = c(1980, 1),
-  data = c(7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 
-           25.2, 26.5, 23.3, 18.3, 13.9, 9.6))
-rainfall &lt;- ts(frequency = 12, start = c(1980, 1),
-  data = c(49.9, 71.5, 106.4, 129.2, 144.0, 176.0, 
-           135.6, 148.5, 216.4, 194.1, 95.6, 54.4))
-weather &lt;- cbind(rainfall, temperature)
+fm_sss_monthly &lt;- fm_sss_monthly %&gt;% 
+  mutate(dist.trav = corvector * 2,
+         month_factor = as.factor(month))
 
-# assign the &quot;rainfall&quot; series to the y2 axis
-dygraph(weather) %&gt;%
-  dySeries(&quot;rainfall&quot;, axis = &#39;y2&#39;)</code></pre>
-<div id="htmlwidget-31e26b9bf3de98957254" style="width:672px;height:480px;" class="dygraphs html-widget"></div>
-<script type="application/json" data-for="htmlwidget-31e26b9bf3de98957254">{"x":{"attrs":{"labels":["month","temperature","rainfall"],"legend":"auto","retainDateWindow":false,"axes":{"x":{"pixelsPerLabel":60}},"series":{"rainfall":{"axis":"y2"}}},"scale":"monthly","annotations":[],"shadings":[],"events":[],"format":"date","data":[["1980-01-01T00:00:00.000Z","1980-02-01T00:00:00.000Z","1980-03-01T00:00:00.000Z","1980-04-01T00:00:00.000Z","1980-05-01T00:00:00.000Z","1980-06-01T00:00:00.000Z","1980-07-01T00:00:00.000Z","1980-08-01T00:00:00.000Z","1980-09-01T00:00:00.000Z","1980-10-01T00:00:00.000Z","1980-11-01T00:00:00.000Z","1980-12-01T00:00:00.000Z"],[7,6.9,9.5,14.5,18.2,21.5,25.2,26.5,23.3,18.3,13.9,9.6],[49.9,71.5,106.4,129.2,144,176,135.6,148.5,216.4,194.1,95.6,54.4]]},"evals":[],"jsHooks":[]}</script>
+fm_sss_monthly %&gt;% 
+  ggplot(aes(dist.trav, sss, color = month_factor))+
+  geom_point(size = 0.1)+
+  labs(x=&quot;Distance to Travemuende [km]&quot;,
+       y=&quot;Surface Salinity&quot;)+
+  theme_bw()+
+  scale_colour_brewer(palette = &quot;Paired&quot;,
+                      type = &quot;qual&quot;,
+                      name = &quot;Month&quot;,
+                      labels = c(&quot;January&quot;, &quot;February&quot;, &quot;March&quot;, &quot;April&quot;, &quot;May&quot;, &quot;June&quot;, &quot;July&quot;, &quot;August&quot;, &quot;September&quot;, &quot;October&quot;, &quot;November&quot;, &quot;December&quot;))</code></pre>
+<p><img src="figure/SSS.Rmd/scatterplot_salinity-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>rm(fm_sss_monthly)</code></pre>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -707,20 +710,20 @@ other attached packages:
 
 loaded via a namespace (and not attached):
  [1] nlme_3.1-137         bitops_1.0-6         fs_1.3.1            
- [4] bit64_0.9-7          httr_1.4.1           rprojroot_1.3-2     
- [7] tools_3.5.0          backports_1.1.5      utf8_1.1.4          
+ [4] bit64_0.9-7          RColorBrewer_1.1-2   httr_1.4.1          
+ [7] rprojroot_1.3-2      tools_3.5.0          backports_1.1.5     
 [10] R6_2.4.0             DBI_1.0.0            colorspace_1.4-1    
 [13] withr_2.1.2          sp_1.3-2             tidyselect_0.2.5    
 [16] gridExtra_2.3        bit_1.1-14           compiler_3.5.0      
 [19] git2r_0.26.1         cli_1.1.0            rvest_0.3.5         
-[22] xml2_1.2.2           scales_1.0.0         checkmate_1.9.4     
-[25] digest_0.6.22        foreign_0.8-70       rmarkdown_2.0       
-[28] pkgconfig_2.0.3      htmltools_0.4.0      dbplyr_1.4.2        
-[31] maps_3.3.0           htmlwidgets_1.5.1    rlang_0.4.5         
-[34] readxl_1.3.1         rstudioapi_0.10      generics_0.0.2      
-[37] jsonlite_1.6         RCurl_1.95-4.12      magrittr_1.5        
-[40] Formula_1.2-3        dotCall64_1.0-0      Matrix_1.2-14       
-[43] fansi_0.4.0          Rcpp_1.0.2           munsell_0.5.0       
+[22] xml2_1.2.2           labeling_0.3         scales_1.0.0        
+[25] checkmate_1.9.4      digest_0.6.22        foreign_0.8-70      
+[28] rmarkdown_2.0        pkgconfig_2.0.3      htmltools_0.4.0     
+[31] dbplyr_1.4.2         maps_3.3.0           htmlwidgets_1.5.1   
+[34] rlang_0.4.5          readxl_1.3.1         rstudioapi_0.10     
+[37] generics_0.0.2       jsonlite_1.6         RCurl_1.95-4.12     
+[40] magrittr_1.5         Formula_1.2-3        dotCall64_1.0-0     
+[43] Matrix_1.2-14        Rcpp_1.0.2           munsell_0.5.0       
 [46] lifecycle_0.1.0      stringi_1.4.3        yaml_2.2.0          
 [49] plyr_1.8.4           grid_3.5.0           maptools_0.9-8      
 [52] formula.tools_1.7.1  parallel_3.5.0       promises_1.1.0      
