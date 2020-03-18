@@ -108,7 +108,7 @@ fm_sss_ngs_monthlymean <- fm_sss__ngs %>%
 rm(array,fm_sss__ngs,nc, timeseries, date_time, filesList_2d, high_lat, i, latitude_east, low_lat, route, select_route, slice, var )
 ```
 
-The mean salinity between March and September for the NGS subregion for all years is `r fm_sss_ngs_monthlymean`.
+The mean salinity between March and September for the NGS subregion for all years is `r round(fm_sss_ngs_monthlymean,2)`.
 
 # CT Plot
 
