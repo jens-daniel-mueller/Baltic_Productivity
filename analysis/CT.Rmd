@@ -47,7 +47,7 @@ high_lat <- 58.5
 
 # CT 
 
-Here we calculate the mean salinity across all measurments made between march - september in the NGS subregion. 
+The mean salinity was calculated across all measurments made between march - september in the NGS subregion. 
 
 ```{r file_list_GETM_CT, eval=FALSE}
 
