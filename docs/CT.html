@@ -27,6 +27,14 @@
 <script src="site_libs/navigation-1.1/codefolding.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<script src="site_libs/htmlwidgets-1.5.1/htmlwidgets.js"></script>
+<link href="site_libs/dygraphs-1.1.1/dygraph.css" rel="stylesheet" />
+<script src="site_libs/dygraphs-1.1.1/dygraph-combined.js"></script>
+<script src="site_libs/dygraphs-1.1.1/shapes.js"></script>
+<script src="site_libs/moment-2.8.4/moment.js"></script>
+<script src="site_libs/moment-timezone-0.2.5/moment-timezone-with-data.js"></script>
+<script src="site_libs/moment-fquarter-1.0.0/moment-fquarter.min.js"></script>
+<script src="site_libs/dygraphs-binding-1.1.1.6/dygraphs.js"></script>
 <link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
 <link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
@@ -370,6 +378,9 @@ div.tocify {
   <a href="MLD_pCO2.html">MLD_pCO2</a>
 </li>
 <li>
+  <a href="SSS.html">SSS</a>
+</li>
+<li>
   <a href="CT.html">CT</a>
 </li>
       </ul>
@@ -414,7 +425,7 @@ div.section {
 
 <h1 class="title toc-ignore">CT</h1>
 <h4 class="author">Jens Daniel Müller &amp; Lara Burchardt</h4>
-<h4 class="date">09 March, 2020</h4>
+<h4 class="date">16 March, 2020</h4>
 
 </div>
 
@@ -439,7 +450,7 @@ div.section {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-03-09
+<strong>Last updated:</strong> 2020-03-16
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -530,10 +541,10 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree92adedd44a3c49f26abc4285fbfacbeea29a9247targetblank92adedda"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/92adedd44a3c49f26abc4285fbfacbeea29a9247" target="_blank">92adedd</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree30b34bbea2d36cf781cc971b5459dd395e5716d5targetblank30b34bba"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/30b34bbea2d36cf781cc971b5459dd395e5716d5" target="_blank">30b34bb</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree92adedd44a3c49f26abc4285fbfacbeea29a9247targetblank92adedda" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree30b34bbea2d36cf781cc971b5459dd395e5716d5targetblank30b34bba" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility. The version displayed above was the version of the Git repository at the time these results were generated. <br><br> Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -547,17 +558,12 @@ Ignored files:
     Ignored:    data/GETM/
     Ignored:    data/OSTIA/
     Ignored:    data/_merged_data_files/
+    Ignored:    data/_merged_data_files_2019V1/
     Ignored:    data/_summarized_data_files/
-
-Untracked files:
-    Untracked:  code/Finnmaid-GETM.Rmd
-    Untracked:  code/SSS.Rmd
+    Ignored:    data/_summarized_data_files_2019V1/
 
 Unstaged changes:
-    Deleted:    analysis/CT.knit.md
-    Deleted:    analysis/CT.utf8.md
-    Deleted:    analysis/Finnmaid-GETM.Rmd
-    Deleted:    analysis/SSS.Rmd
+    Deleted:    code/SSS.Rmd
 
 </code></pre>
 <p>
@@ -598,7 +604,7 @@ high_lat &lt;- 58.5</code></pre>
 <div id="ct" class="section level1">
 <h1><span class="header-section-number">1</span> CT</h1>
 <p>Here we calculate the mean salinity across all measurments made between march - september in the NGS subregion.</p>
-<pre class="r"><code>filesList_2d &lt;- list.files(path= &quot;data&quot;, pattern = &quot;Finnmaid.E.2d&quot;, recursive = TRUE)</code></pre>
+<pre class="r"><code>filesList_2d &lt;- list.files(path= &quot;data&quot;, pattern = &quot;Finnmaid.E.2d.20&quot;, recursive = TRUE)</code></pre>
 <pre class="r"><code>nc &lt;- nc_open(paste(&quot;data/Finnmaid/&quot;, &quot;FM_all_2019_on_standard_tracks.nc&quot;, sep = &quot;&quot;))
 
 # read required vectors from netcdf file
@@ -646,6 +652,28 @@ fm_sss_ngs_monthlymean &lt;- fm_sss__ngs %&gt;%
   filter(month &gt;=3 , month &lt;=9) %&gt;% 
   summarise(sss_mean = mean(sss, na.rm = TRUE))</code></pre>
 <p>The mean salinity between March and September for the NGS subregion for all years is 6.7291982.</p>
+</div>
+<div id="ct-plot" class="section level1">
+<h1><span class="header-section-number">2</span> CT Plot</h1>
+<p>In the following section, we create a dygraph with two y-axis, combining the pCO2 measurments from VOS Finnmaid with the MLD5 calculations of the GETM Model.</p>
+<pre class="r"><code>gt_mld_fm_pco2_ngs &lt;-
+vroom::vroom(here::here(&quot;data/_merged_data_files/&quot;, file = &quot;gt_mld_fm_pco2_ngs.csv&quot;))
+
+
+
+temperature &lt;- ts(frequency = 12, start = c(1980, 1),
+  data = c(7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 
+           25.2, 26.5, 23.3, 18.3, 13.9, 9.6))
+rainfall &lt;- ts(frequency = 12, start = c(1980, 1),
+  data = c(49.9, 71.5, 106.4, 129.2, 144.0, 176.0, 
+           135.6, 148.5, 216.4, 194.1, 95.6, 54.4))
+weather &lt;- cbind(rainfall, temperature)
+
+# assign the &quot;rainfall&quot; series to the y2 axis
+dygraph(weather) %&gt;%
+  dySeries(&quot;rainfall&quot;, axis = &#39;y2&#39;)</code></pre>
+<div id="htmlwidget-31e26b9bf3de98957254" style="width:672px;height:480px;" class="dygraphs html-widget"></div>
+<script type="application/json" data-for="htmlwidget-31e26b9bf3de98957254">{"x":{"attrs":{"labels":["month","temperature","rainfall"],"legend":"auto","retainDateWindow":false,"axes":{"x":{"pixelsPerLabel":60}},"series":{"rainfall":{"axis":"y2"}}},"scale":"monthly","annotations":[],"shadings":[],"events":[],"format":"date","data":[["1980-01-01T00:00:00.000Z","1980-02-01T00:00:00.000Z","1980-03-01T00:00:00.000Z","1980-04-01T00:00:00.000Z","1980-05-01T00:00:00.000Z","1980-06-01T00:00:00.000Z","1980-07-01T00:00:00.000Z","1980-08-01T00:00:00.000Z","1980-09-01T00:00:00.000Z","1980-10-01T00:00:00.000Z","1980-11-01T00:00:00.000Z","1980-12-01T00:00:00.000Z"],[7,6.9,9.5,14.5,18.2,21.5,25.2,26.5,23.3,18.3,13.9,9.6],[49.9,71.5,106.4,129.2,144,176,135.6,148.5,216.4,194.1,95.6,54.4]]},"evals":[],"jsHooks":[]}</script>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -695,15 +723,16 @@ loaded via a namespace (and not attached):
 [43] fansi_0.4.0          Rcpp_1.0.2           munsell_0.5.0       
 [46] lifecycle_0.1.0      stringi_1.4.3        yaml_2.2.0          
 [49] plyr_1.8.4           grid_3.5.0           maptools_0.9-8      
-[52] formula.tools_1.7.1  promises_1.1.0       crayon_1.3.4        
-[55] lattice_0.20-35      haven_2.2.0          hms_0.5.2           
-[58] zeallot_0.1.0        knitr_1.26           pillar_1.4.2        
-[61] reprex_0.3.0         glue_1.3.1           evaluate_0.14       
-[64] data.table_1.12.6    modelr_0.1.5         operator.tools_1.6.3
-[67] vctrs_0.2.0          spam_2.3-0.2         httpuv_1.5.2        
-[70] cellranger_1.1.0     gtable_0.3.0         assertthat_0.2.1    
-[73] xfun_0.10            broom_0.5.3          later_1.0.0         
-[76] memoise_1.1.0        fields_9.9           workflowr_1.6.0     </code></pre>
+[52] formula.tools_1.7.1  parallel_3.5.0       promises_1.1.0      
+[55] crayon_1.3.4         lattice_0.20-35      haven_2.2.0         
+[58] hms_0.5.2            zeallot_0.1.0        knitr_1.26          
+[61] pillar_1.4.2         reprex_0.3.0         glue_1.3.1          
+[64] evaluate_0.14        data.table_1.12.6    modelr_0.1.5        
+[67] operator.tools_1.6.3 vctrs_0.2.0          spam_2.3-0.2        
+[70] httpuv_1.5.2         cellranger_1.1.0     gtable_0.3.0        
+[73] assertthat_0.2.1     xfun_0.10            broom_0.5.3         
+[76] later_1.0.0          memoise_1.1.0        fields_9.9          
+[79] workflowr_1.6.0     </code></pre>
 </div>
 </div>
 

@@ -9,6 +9,8 @@ navbar:
     href: SST.html
   - text: MLD_pCO2
     href: MLD_pCO2.html
+  - text: SSS
+    href: SSS.html
   - text: CT
     href: CT.html
   right:

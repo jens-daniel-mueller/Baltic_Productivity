@@ -613,7 +613,7 @@ ts_pco2_hov %>%
 
 ### Comparison pCO2 and mld age 5
 
-```{r hovmoeller_Finmmaid-GETM_pcO2-mld, fig.asp=5, fig.cap="Mean weekly difference between modelled (GETM)  mixed layer depth and observed (Finnmaid) pCO2 values as a function of time and the ships distance to Travemuende along route E."}
+```{r hovmoeller_Finmmaid-GETM_pcO2-mld, fig.asp=5, fig.cap="Mean weekly ratio between modelled (GETM)  mixed layer depth and observed (Finnmaid) pCO2 values as a function of time and the ships distance to Travemuende along route E."}
 
 ts_mld_pco2_hov <- ts_mld_pco2_hov %>% 
   mutate(date = ymd(date),

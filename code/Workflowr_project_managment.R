@@ -113,6 +113,7 @@ wflow_publish(all = TRUE, message = "XXX")
 wflow_publish(c("analysis/*"), message = "XXX", republish = TRUE)
 
 
+
 # Push latest version to GitHub
 wflow_git_push()
 jens-daniel-mueller
