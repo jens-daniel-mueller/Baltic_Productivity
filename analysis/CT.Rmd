@@ -103,6 +103,9 @@ fm_sss__ngs <- timeseries %>%
 fm_sss_ngs_monthlymean <- fm_sss__ngs %>% 
   filter(month >=3 , month <=9) %>% 
   summarise(sss_mean = mean(sss, na.rm = TRUE))
+
+
+rm(array,fm_sss__ngs,nc, timeseries, date_time, filesList_2d, high_lat, i, latitude_east, low_lat, route, select_route, slice, var )
 ```
 
 The mean salinity between March and September for the NGS subregion for all years is `r fm_sss_ngs_monthlymean`.
@@ -115,17 +118,22 @@ In the following section, we create a dygraph with two y-axis, combining the pCO
 gt_mld_fm_pco2_ngs <-
 vroom::vroom(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
 
+gt_mld_fm_pco2_ngs <- gt_mld_fm_pco2_ngs %>%
+  mutate(as.POSIXct(date))
+  
 
+pco2 <- xts(cbind(gt_mld_fm_pco2_ngs$value_pCO2, gt_mld_fm_pco2_ngs$min_pCO2, gt_mld_fm_pco2_ngs$max_pCO2), order.by = gt_mld_fm_pco2_ngs$date)
+names(pco2) <- c("pCO2 Finnmaid", "lwr", "upr")
 
-temperature <- ts(frequency = 12, start = c(1980, 1),
-  data = c(7.0, 6.9, 9.5, 14.5, 18.2, 21.5, 
-           25.2, 26.5, 23.3, 18.3, 13.9, 9.6))
-rainfall <- ts(frequency = 12, start = c(1980, 1),
-  data = c(49.9, 71.5, 106.4, 129.2, 144.0, 176.0, 
-           135.6, 148.5, 216.4, 194.1, 95.6, 54.4))
-weather <- cbind(rainfall, temperature)
+mld5 <- xts(gt_mld_fm_pco2_ngs$value_mld5, order.by = gt_mld_fm_pco2_ngs$date)
 
-# assign the "rainfall" series to the y2 axis
-dygraph(weather) %>%
-  dySeries("rainfall", axis = 'y2')
+plotdata <- cbind(pco2,mld5)
+
+dygraph(plotdata) %>% 
+  dySeries("mld5", axis = 'y2') %>% 
+  dySeries(c("lwr","pCO2.Finnmaid", "upr")) %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
+            drawAxesAtZero=TRUE)
+rm(pco2, mld5, plotdata, fm_sss_ngs_monthlymean, gt_mld_fm_pco2_ngs)
 ```
