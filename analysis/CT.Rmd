@@ -28,6 +28,8 @@ library(dygraphs)
 library(xts)
 library(here)
 library(metR)
+library(oce)
+library(patchwork)
 
 ```
 
@@ -56,6 +58,7 @@ filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive
 ```
 
 ```{r read_sss_data_fm_ngs}
+
 
 nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
 
@@ -136,4 +139,105 @@ dygraph(plotdata) %>%
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
             drawAxesAtZero=TRUE)
 rm(pco2, mld5, plotdata, fm_sss_ngs_monthlymean, gt_mld_fm_pco2_ngs)
+```
+
+# Data extraction all routes
+
+```{r fm_ngs_all_routes}
+nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
+
+# read required vectors from netcdf file
+route <- ncvar_get(nc, "route")
+route <- unlist(strsplit(route, ""))
+date_time <- ncvar_get(nc, "time")
+latitude_east <- ncvar_get(nc, "latitude_east")
+
+for (var in c("SST_east", "SSS_east", "pCO2_east")) {
+  
+  print(var)
+  
+  array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+  #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
+  
+  fillvalue <- ncatt_get(nc, var, "_FillValue")
+  array[array == fillvalue$value] <- NA
+  rm(fillvalue)
+  
+    for (i in seq(1,length(route),1)){
+  
+      
+    if(route[i] != "N" & route[i] != "P") {
+      slice <- array[i,]
+      
+      value <- mean(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      sd    <- sd(slice[latitude_east > low_lat & latitude_east < high_lat], na.rm = TRUE)
+      date <- ymd("2000-01-01") + date_time[i]
+      
+      fm_ngs_all_routes_part <- bind_cols(date = date, var=var, value = value, sd = sd, route=route[i])
+      
+      if (exists("fm_ngs_all_routes", inherits = FALSE)){
+        fm_ngs_all_routes <- bind_rows(fm_ngs_all_routes, fm_ngs_all_routes_part)
+      } else{fm_ngs_all_routes <- fm_ngs_all_routes_part}
+      
+      rm(fm_ngs_all_routes_part, value, date, sd, slice)
+      
+      } 
+    }
+  rm(array, var,i)
+}   
+      
+nc_close(nc)
+
+fm_ngs_all_routes %>%  
+  vroom_write(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
+
+rm(nc, fm_ngs_all_routes, latitude_east, route,date_time)
+
+```
+#Windspeed
+
+```{r read_getm_2d_mld_wind, eval=FALSE}
+nc_2d <- nc_open(here("data/GETM", "Finnmaid.E.2d.2018.nc"))
+#print(nc_2d)
+lat <- ncvar_get(nc_2d, "latc")
+time_units <- nc_2d$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+    substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
+    ymd_hms()                           # and transform it to the right format
+t <- time_units + ncvar_get(nc_2d, "time") # read time vector
+rm(time_units)
+for (var in c("mld_rho", "u10", "v10")) {
+  
+#var <- "mld_rho"
+array <- ncvar_get(nc_2d, var) # store the data in a 3-dimensional array
+fillvalue <- ncatt_get(nc_2d, var, "_FillValue")
+array[array == fillvalue$value] <- NA
+array <- as.data.frame(t(array), xy=TRUE)
+array <- as_tibble(array)
+      
+  gt_2d_part <- array %>%
+  set_names(as.character(lat)) %>%
+  mutate(date_time = t) %>%
+  gather("lat", "value", 1:length(lat)) %>%
+  mutate(lat = as.numeric(lat)) %>%
+  filter(lat > low_lat, lat<high_lat) %>%
+  select(-lat) %>% 
+  group_by(date_time) %>% 
+  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
+  ungroup() %>% 
+  mutate(var = var)
+     
+  if (exists("gt_2d")) {
+    gt_2d <- bind_rows(gt_2d, gt_2d_part)
+    } else {gt_2d <- gt_2d_part} 
+rm(array, fillvalue, gt_2d_part)
+}
+nc_close(nc_2d)
+rm(nc_2d)
+gt_2d <- gt_2d %>% 
+  pivot_wider(values_from = value, names_from = var) %>% #doesn't know pivot_wider...
+  mutate(U_10 = (sqrt(u10^2 + v10^2))) %>% 
+  select(-c(u10, v10))
+gt_2d %>% 
+  vroom_write((here::here("data/_summarized_data_files", file = "gt_2d_windspeed.csv")))
+rm(t, var, gt_2d, lat)
 ```
