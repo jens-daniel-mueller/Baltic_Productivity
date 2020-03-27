@@ -28,8 +28,9 @@ library(dygraphs)
 library(xts)
 library(here)
 library(metR)
-library(oce)
-library(patchwork)
+library(seacarb)
+#library(oce)
+#library(patchwork)
 
 ```
 
@@ -43,7 +44,7 @@ var <- "SSS_east"
 
 # latitude limits
 low_lat <- 57.5
-high_lat <- 58.5
+high_lat <- 58.8
 
 ```
 
@@ -51,11 +52,6 @@ high_lat <- 58.5
 
 The mean salinity was calculated across all measurments made between march - september in the NGS subregion. 
 
-```{r file_list_GETM_CT, eval=FALSE}
-
-filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive = TRUE)
-
-```
 
 ```{r read_sss_data_fm_ngs}
 
@@ -154,7 +150,7 @@ latitude_east <- ncvar_get(nc, "latitude_east")
 
 for (var in c("SST_east", "SSS_east", "pCO2_east")) {
   
-  print(var)
+  #print(var)
   
   array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
   #dim(array) # should have 2 dimensions: 544 coordinate, 2089 time steps
@@ -194,50 +190,146 @@ fm_ngs_all_routes %>%
 rm(nc, fm_ngs_all_routes, latitude_east, route,date_time)
 
 ```
+
 #Windspeed
 
+
+```{r file_list_GETM_CT, eval=FALSE}
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive = TRUE)
+
+```
+
+
 ```{r read_getm_2d_mld_wind, eval=FALSE}
-nc_2d <- nc_open(here("data/GETM", "Finnmaid.E.2d.2018.nc"))
-#print(nc_2d)
-lat <- ncvar_get(nc_2d, "latc")
-time_units <- nc_2d$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
+var_all <- c("u10", "v10")
+
+filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive = TRUE)
+
+file <- filesList_2d[1]
+nc <- nc_open(paste("data/", file, sep = ""))
+
+lon <- ncvar_get(nc, "lonc")
+lat <- ncvar_get(nc, "latc", verbose = F)
+nc_close(nc)
+
+rm(file, nc)
+
+for (a in 1:2){
+
+  var <- var_all[a]
+  
+for (n in 1:length(filesList_2d)) {
+
+file <- filesList_2d[n]
+
+nc <- nc_open(paste("data/", file, sep = ""))
+
+time_units <- nc$dim$time$units %>%     #we read the time unit from the netcdf file to calibrate the time 
     substr(start = 15, stop = 33) %>%   #calculation, we take the relevant information from the string
     ymd_hms()                           # and transform it to the right format
-t <- time_units + ncvar_get(nc_2d, "time") # read time vector
-rm(time_units)
-for (var in c("mld_rho", "u10", "v10")) {
-  
-#var <- "mld_rho"
-array <- ncvar_get(nc_2d, var) # store the data in a 3-dimensional array
-fillvalue <- ncatt_get(nc_2d, var, "_FillValue")
-array[array == fillvalue$value] <- NA
+
+t <- time_units + ncvar_get(nc, "time")
+
+array <- ncvar_get(nc, var) # store the data in a 2-dimensional array
+dim(array) # should be 2d with dimensions: 544 coordinate, 31d*(24h/d/3h)=248 time steps
+
 array <- as.data.frame(t(array), xy=TRUE)
 array <- as_tibble(array)
-      
-  gt_2d_part <- array %>%
+
+gt_windspeed_ngs_part <- array %>%
   set_names(as.character(lat)) %>%
   mutate(date_time = t) %>%
   gather("lat", "value", 1:length(lat)) %>%
   mutate(lat = as.numeric(lat)) %>%
   filter(lat > low_lat, lat<high_lat) %>%
-  select(-lat) %>% 
-  group_by(date_time) %>% 
-  summarise_all(list(value=~mean(.,na.rm=TRUE))) %>%
-  ungroup() %>% 
+  group_by(date_time) %>%
+  summarise_all("mean") %>%
+  ungroup() %>%
   mutate(var = var)
-     
-  if (exists("gt_2d")) {
-    gt_2d <- bind_rows(gt_2d, gt_2d_part)
-    } else {gt_2d <- gt_2d_part} 
-rm(array, fillvalue, gt_2d_part)
+
+
+if (exists("gt_windspeed_ngs")) {gt_windspeed_ngs <- bind_rows(gt_windspeed_ngs, gt_windspeed_ngs_part)
+  }else {gt_windspeed_ngs <- gt_windspeed_ngs_part}
+
+  nc_close(nc)
+  rm(array, nc, t, gt_windspeed_ngs_part)
+  print(n) # to see working progress
 }
-nc_close(nc_2d)
-rm(nc_2d)
-gt_2d <- gt_2d %>% 
-  pivot_wider(values_from = value, names_from = var) %>% #doesn't know pivot_wider...
-  mutate(U_10 = (sqrt(u10^2 + v10^2))) %>% 
+
+print(paste("gt_", var, "_ngs.csv", sep = "")) # to see working progress
+
+
+rm( n, file, time_units, var)
+}
+
+rm(a, filesList_2d, var_all, lat, lon)
+
+
+gt_windspeed_ngs <- gt_windspeed_ngs %>% 
+  mutate(value = round(value, 3)) %>%
+  group_by(date_time, lat, var) %>% 
+  summarise(mean_value= mean(value)) %>% 
+  pivot_wider(values_from = mean_value, names_from = var) %>% 
+  mutate(U_10 = round(sqrt(u10^2 + v10^2), 3)) %>% 
   select(-c(u10, v10))
-gt_2d %>% 
-  vroom_write((here::here("data/_summarized_data_files", file = "gt_2d_windspeed.csv")))
-rm(t, var, gt_2d, lat)
+
+gt_windspeed_ngs %>% 
+  vroom_write(here::here("data/_summarized_data_files/", file = paste("gt_windspeed_ngs.csv", sep = "")))
+
+```
+
+
+# C~T~ calculation
+
+C~T~ was calculated from measured pCO~2~ based on a fixed mean alkalinity value of 1650 µmol kg-1.
+
+```{r calculate_CT_from_pCO2_Finnmaid}
+
+df <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
+
+df <- df %>% 
+  drop_na() %>% 
+  select(value, var, date) 
+
+df <- df %>% 
+  pivot_wider(values_from = value, names_from = var) 
+
+df <- df%>% 
+  mutate(sal = SSS_east,
+         tem = SST_east,
+         pCO2 = pCO2_east) %>% 
+  select(pCO2,tem, sal, date)
+
+
+df <- df %>%
+  mutate(CT = carb(24, var1=pCO2, var2=1650*1e-6,
+                   S=sal, T=tem, k1k2="m10", kf="dg", ks="d",
+                   gas="insitu")[,16]*1e6)
+
+```
+
+# Air-sea CO~2~ flux
+
+The CO~2~ flux across the sea surface was calculated according to Wanninkhof (2014).
+
+
+```{r calculate_gas_exchange_from_Finnmaid_pCO2_S_T_and_GETM_wind}
+
+Sc_W14 <- function(tem) {
+  2116.8 - 136.25 * tem + 4.7353 * tem^2 - 0.092307 * tem^3 + 0.0007555 * tem^4
+}
+
+Sc_W14(20)
+
+df <- df %>%
+  mutate(pCO2_air = 400 - 2*(2015-year),
+         dpCO2 = pCO2 - pCO2_air,
+         dCO2  = dpCO2 * K0(S=6.92, T=tem),
+         k     = 0.251 * wind^2 * (Sc_W14(tem)/660)^(-0.5))
+
+# calculate flux F [mol m–2 d–1]
+df <- df %>%
+  mutate(flux_daily = k_value*dCO2*1e-5*24)
+
 ```
