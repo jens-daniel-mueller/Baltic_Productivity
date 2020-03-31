@@ -292,20 +292,49 @@ df <- df %>%
   drop_na() %>% 
   select(value, var, date) 
 
-df <- df %>% 
-  pivot_wider(values_from = value, names_from = var) 
+#df <- df %>% 
+#  pivot_wider(values_from = value, names_from = var) 
 
-df <- df%>% 
-  mutate(sal = SSS_east,
-         tem = SST_east,
-         pCO2 = pCO2_east) %>% 
-  select(pCO2,tem, sal, date)
+#df <- df%>% 
+#  mutate(sal = SSS_east,
+#         tem = SST_east,
+#         pCO2 = pCO2_east) %>% 
+#  select(pCO2,tem, sal, date)
 
+# not enough RAM for pivot_wider
+# alternative with "filter"
+
+df_sst <- df %>% 
+  filter( var == "SST_east") %>% 
+  mutate( tem = value) %>% 
+  select (tem)
+
+df_sss <- df %>% 
+  filter( var == "SSS_east") %>% 
+  mutate( sal = value) %>% 
+  select( sal)
+
+df_pco2 <- df %>% 
+  filter( var == "pCO2_east") %>% 
+  mutate (pCO2 = value) %>% 
+  select( pCO2, date)
+
+df <- cbind(df_pco2, df_sst, df_sss) %>% 
+  select(date, tem, sal, pCO2)
+
+df %>% 
+  vroom_write(here::here("data/_merged_data_files/", file = paste("fm_gt__sal_tem_pco2_ngs.csv", sep = "")))
 
 df <- df %>%
   mutate(CT = carb(24, var1=pCO2, var2=1650*1e-6,
                    S=sal, T=tem, k1k2="m10", kf="dg", ks="d",
                    gas="insitu")[,16]*1e6)
+
+
+df %>% 
+   vroom_write(here::here("data/_merged_data_files/", file = paste("fm_CT_ngs.csv", sep = "")))
+
+rm(df, df_sss, df_sst, df_pco2)
 
 ```
 
@@ -315,6 +344,24 @@ The CO~2~ flux across the sea surface was calculated according to Wanninkhof (20
 
 
 ```{r calculate_gas_exchange_from_Finnmaid_pCO2_S_T_and_GETM_wind}
+
+df_1 <- vroom::vroom(here::here("data/_merged_data_files/", file = "fm_gt__sal_tem_pco2_ngs.csv"))
+df_2 <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"))
+
+df_2$date_time <- round_date(df_2$date_time, unit = "day")
+df_2 <- df_2 %>% 
+  mutate(date = as.Date(date_time)) %>% 
+  select(date, U_10) %>% 
+  group_by(date) %>% 
+  summarise_all("mean")
+
+
+df <- inner_join(df_1, df_2, by = "date")
+
+df <- df %>% 
+  mutate(year = year(date))
+
+rm(df_1,df_2)
 
 Sc_W14 <- function(tem) {
   2116.8 - 136.25 * tem + 4.7353 * tem^2 - 0.092307 * tem^3 + 0.0007555 * tem^4
@@ -332,4 +379,51 @@ df <- df %>%
 df <- df %>%
   mutate(flux_daily = k_value*dCO2*1e-5*24)
 
+df %>% 
+   vroom_write(here::here("data/_merged_data_files/", file = paste("gt_fm_flux_ngs.csv", sep = "")))
+
+rm(df, Sc_W14)
+```
+
+# Visualization of CT, CO2 flux and windspeeds
+
+```{r visualization_CT_flux_windspeeds, fig.asp=0.5}
+
+gt_fm_flux_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"))
+fm_CT_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "fm_CT_ngs.csv"))
+gt_windspeed_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_windspeed_ngs.csv"))
+
+
+ts_xts_flux <- xts(gt_fm_flux_ngs$flux_daily, order.by = gt_fm_flux_ngs$date)
+names(ts_xts_flux) <- "Daily Flux"
+ts_xts_CT <- xts(fm_CT_ngs, order.by = fm_CT_ngs$date)
+names(ts_xts_CT) <- "CT"
+ts_xts_windspeed <- xts(gt_windspeed_ngs$U_10, order.by = gt_windspeed_ngs$date_time)
+names(ts_xts_windspeed) <- "Windspeed"
+
+ts_xts_flux %>% 
+  dygraph(group = "Fluxes") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("Daily Flux") %>% 
+  dyAxis("y", label = "Daily Flux") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
+
+ts_xts_CT %>% 
+  dygraph(group = "Fluxes") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("CT") %>% 
+  dyAxis("y", label = "CT") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
+            drawAxesAtZero=TRUE)
+
+ts_xts_windspeed %>% 
+  dygraph(group = "Fluxes") %>% 
+  dyRangeSelector(dateWindow = c("2014-01-01", "2016-12-31")) %>% 
+  dySeries("Windspeed") %>% 
+  dyAxis("y", label = "Windspeed [m/s]") %>% 
+  dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5,
+            drawAxesAtZero=TRUE)
+
+
+rm(gt_fm_flux_ngs, gt_windspeed_ngs, fm_CT_ngs, ts_xts_CT, ts_xts_flux, ts_xts_windspeed)
 ```
