@@ -104,7 +104,8 @@ fm_sss_ngs_monthlymean <- fm_sss__ngs %>%
   summarise(sss_mean = mean(sss, na.rm = TRUE))
 
 
-rm(array,fm_sss__ngs,nc, timeseries, date_time, filesList_2d, high_lat, i, latitude_east, low_lat, route, select_route, slice, var )
+rm(array,fm_sss__ngs,nc, timeseries, date_time, 
+  i, latitude_east, route, select_route, slice, var)
 ```
 
 The mean salinity between March and September for the NGS subregion for all years is `r round(fm_sss_ngs_monthlymean,2)`.
@@ -267,7 +268,6 @@ rm(a, filesList_2d, var_all, lat, lon)
 
 
 gt_windspeed_ngs <- gt_windspeed_ngs %>% 
-  mutate(value = round(value, 3)) %>%
   group_by(date_time, lat, var) %>% 
   summarise(mean_value= mean(value)) %>% 
   pivot_wider(values_from = mean_value, names_from = var) %>% 
@@ -284,55 +284,56 @@ gt_windspeed_ngs %>%
 
 C~T~ was calculated from measured pCO~2~ based on a fixed mean alkalinity value of 1650 µmol kg-1.
 
-```{r calculate_CT_from_pCO2_Finnmaid}
+```{r calculate_CT_from_pCO2_Finnmaid, eval=FALSE}
 
 df <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
 
 df <- df %>% 
-  drop_na() %>% 
-  select(value, var, date) 
+  select(date, var, value, route) 
 
-#df <- df %>% 
-#  pivot_wider(values_from = value, names_from = var) 
+df <- df %>%
+ pivot_wider(values_from = value, names_from = var) %>% 
+  drop_na()
 
-#df <- df%>% 
+#df <- df%>%
 #  mutate(sal = SSS_east,
 #         tem = SST_east,
-#         pCO2 = pCO2_east) %>% 
+#         pCO2 = pCO2_east) %>%
 #  select(pCO2,tem, sal, date)
 
 # not enough RAM for pivot_wider
 # alternative with "filter"
 
-df_sst <- df %>% 
-  filter( var == "SST_east") %>% 
-  mutate( tem = value) %>% 
-  select (tem)
+# df_sst <- df %>% 
+#   filter( var == "SST_east") %>% 
+#   mutate( tem = value) %>% 
+#   select (tem)
+# 
+# df_sss <- df %>% 
+#   filter( var == "SSS_east") %>% 
+#   mutate( sal = value) %>% 
+#   select( sal)
+# 
+# df_pco2 <- df %>% 
+#   filter( var == "pCO2_east") %>% 
+#   mutate (pCO2 = value) %>% 
+#   select( pCO2, date)
+# 
+# df <- cbind(df_pco2, df_sst, df_sss) %>% 
+#   select(date, tem, sal, pCO2)
 
-df_sss <- df %>% 
-  filter( var == "SSS_east") %>% 
-  mutate( sal = value) %>% 
-  select( sal)
-
-df_pco2 <- df %>% 
-  filter( var == "pCO2_east") %>% 
-  mutate (pCO2 = value) %>% 
-  select( pCO2, date)
-
-df <- cbind(df_pco2, df_sst, df_sss) %>% 
-  select(date, tem, sal, pCO2)
-
-df %>% 
-  vroom_write(here::here("data/_merged_data_files/", file = paste("fm_gt__sal_tem_pco2_ngs.csv", sep = "")))
+# df %>% 
+#   vroom_write(here::here("data/_merged_data_files/", file = paste("fm_gt__sal_tem_pco2_ngs.csv", sep = "")))
 
 df <- df %>%
+  rename(SST = SST_east, SSS = SSS_east, pCO2 = pCO2_east) %>% 
   mutate(CT = carb(24, var1=pCO2, var2=1650*1e-6,
-                   S=sal, T=tem, k1k2="m10", kf="dg", ks="d",
+                   S=SSS, T=SST, k1k2="m10", kf="dg", ks="d",
                    gas="insitu")[,16]*1e6)
 
 
 df %>% 
-   vroom_write(here::here("data/_merged_data_files/", file = paste("fm_CT_ngs.csv", sep = "")))
+   vroom_write(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
 rm(df, df_sss, df_sst, df_pco2)
 
@@ -343,9 +344,9 @@ rm(df, df_sss, df_sst, df_pco2)
 The CO~2~ flux across the sea surface was calculated according to Wanninkhof (2014).
 
 
-```{r calculate_gas_exchange_from_Finnmaid_pCO2_S_T_and_GETM_wind}
+```{r calculate_gas_exchange_from_Finnmaid_pCO2_S_T_and_GETM_wind, eval=FALSE}
 
-df_1 <- vroom::vroom(here::here("data/_merged_data_files/", file = "fm_gt__sal_tem_pco2_ngs.csv"))
+df_1 <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 df_2 <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"))
 
 df_2$date_time <- round_date(df_2$date_time, unit = "day")
@@ -357,11 +358,10 @@ df_2 <- df_2 %>%
 
 
 df <- inner_join(df_1, df_2, by = "date")
+rm(df_1,df_2)
 
 df <- df %>% 
   mutate(year = year(date))
-
-rm(df_1,df_2)
 
 Sc_W14 <- function(tem) {
   2116.8 - 136.25 * tem + 4.7353 * tem^2 - 0.092307 * tem^3 + 0.0007555 * tem^4
@@ -369,15 +369,14 @@ Sc_W14 <- function(tem) {
 
 Sc_W14(20)
 
+# calculate flux F [mol m–2 d–1]
 df <- df %>%
   mutate(pCO2_air = 400 - 2*(2015-year),
          dpCO2 = pCO2 - pCO2_air,
-         dCO2  = dpCO2 * K0(S=6.92, T=tem),
-         k     = 0.251 * wind^2 * (Sc_W14(tem)/660)^(-0.5))
+         dCO2  = dpCO2 * K0(S=6.92, T=SST),
+         k     = 0.251 * U_10^2 * (Sc_W14(SST)/660)^(-0.5),
+         flux_daily = k*dCO2*1e-5*24)
 
-# calculate flux F [mol m–2 d–1]
-df <- df %>%
-  mutate(flux_daily = k_value*dCO2*1e-5*24)
 
 df %>% 
    vroom_write(here::here("data/_merged_data_files/", file = paste("gt_fm_flux_ngs.csv", sep = "")))
@@ -390,13 +389,13 @@ rm(df, Sc_W14)
 ```{r visualization_CT_flux_windspeeds, fig.asp=0.5}
 
 gt_fm_flux_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"))
-fm_CT_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "fm_CT_ngs.csv"))
-gt_windspeed_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_windspeed_ngs.csv"))
+fm_CT_ngs <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
+gt_windspeed_ngs <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"))
 
 
 ts_xts_flux <- xts(gt_fm_flux_ngs$flux_daily, order.by = gt_fm_flux_ngs$date)
 names(ts_xts_flux) <- "Daily Flux"
-ts_xts_CT <- xts(fm_CT_ngs, order.by = fm_CT_ngs$date)
+ts_xts_CT <- xts(fm_CT_ngs$CT, order.by = fm_CT_ngs$date)
 names(ts_xts_CT) <- "CT"
 ts_xts_windspeed <- xts(gt_windspeed_ngs$U_10, order.by = gt_windspeed_ngs$date_time)
 names(ts_xts_windspeed) <- "Windspeed"
