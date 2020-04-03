@@ -287,8 +287,7 @@ df <- df %>%
 # df <- cbind(df_pco2, df_sst, df_sss) %>% 
 #   select(date, tem, sal, pCO2)
 
-
-pull(fm_sss_ngs_monthlymean)      #? 
+#calculation of CT based on pCO2 (var1) and alkalinity (var2) as input parameters
 
 df <- df %>%
   rename(SST = SST_east,
@@ -298,7 +297,7 @@ df <- df %>%
                    var2=1650*1e-6,
                    S=pull(fm_sss_ngs_monthlymean),
                    T=SST,
-                   k1k2="m10", kf="dg", ks="d", gas="insitu")[,16]*1e6)     #?
+                   k1k2="m10", kf="dg", ks="d", gas="insitu")[,16]*1e6)
 
 
 df %>% 
@@ -337,9 +336,10 @@ df <- df %>%
          SST_int = na.approx(SST, na.rm = FALSE)) %>% 
   filter(!is.na(pCO2_int))
 
+#Calculation of the Schmidt number as a funktion of temperature according to Wanninkhof (2014)
 Sc_W14 <- function(tem) {
   2116.8 - 136.25 * tem + 4.7353 * tem^2 - 0.092307 * tem^3 + 0.0007555 * tem^4
-}                                                                   #?
+}
 
 Sc_W14(20)
 
