@@ -288,6 +288,7 @@ df <- df %>%
 #   select(date, tem, sal, pCO2)
 
 #calculation of CT based on pCO2 (var1) and alkalinity (var2) as input parameters
+#calculation of CT in theoretical equilibrium with atmosphere (CT_equi) based on pCO2_air (var1) and alkalinity (var2) as input parameters
 
 df <- df %>%
   rename(SST = SST_east,
@@ -297,7 +298,16 @@ df <- df %>%
                    var2=1650*1e-6,
                    S=pull(fm_sss_ngs_monthlymean),
                    T=SST,
-                   k1k2="m10", kf="dg", ks="d", gas="insitu")[,16]*1e6)
+                   k1k2="m10", kf="dg", ks="d", gas="insitu")[,16]*1e6) %>% 
+  mutate(year = year(date),
+         pCO2_air = 400 - 2*(2015-year),
+         CT_equi = carb(24,
+                   var1=pCO2_air,
+                   var2=1650*1e-6,
+                   S=pull(fm_sss_ngs_monthlymean),
+                   T=SST,
+                   k1k2="m10", kf="dg", ks="d", gas="insitu")[,16]*1e6) %>% 
+  select(-c(pCO2_air, year))
 
 
 df %>% 
@@ -365,8 +375,8 @@ rm(df, Sc_W14)
 # read CT and flux data
 gt_fm_flux_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"))
 
-ts_xts_CT <- xts(gt_fm_flux_ngs$CT, order.by = gt_fm_flux_ngs$date)
-names(ts_xts_CT) <- "CT"
+ts_xts_CT <- xts(cbind(gt_fm_flux_ngs$CT, gt_fm_flux_ngs$CT_equi), order.by = gt_fm_flux_ngs$date)
+names(ts_xts_CT) <- c("CT", "CT_equi")
 
 ts_xts_SST <- xts(gt_fm_flux_ngs$SST, order.by = gt_fm_flux_ngs$date)
 names(ts_xts_SST) <- "SST"
