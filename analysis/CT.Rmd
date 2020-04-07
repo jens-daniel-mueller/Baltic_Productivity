@@ -29,6 +29,7 @@ library(xts)
 library(here)
 library(seacarb)
 library(zoo)
+library(RColorBrewer)
 
 ```
 
@@ -157,7 +158,7 @@ for (var in c("SST_east", "pCO2_east")) {
 nc_close(nc)
 
 fm_ngs_all_routes %>%  
-  vroom_write(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
+  write.csv(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
 
 rm(nc, fm_ngs_all_routes, latitude_east, route,date_time)
 
@@ -238,7 +239,7 @@ gt_windspeed_ngs <- gt_windspeed_ngs %>%
   select(-c(u10, v10))
 
 gt_windspeed_ngs %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = paste("gt_windspeed_ngs.csv", sep = "")))
+  write.csv(here::here("data/_summarized_data_files/", file = paste("gt_windspeed_ngs.csv")))
 
 rm(gt_windspeed_ngs)
 
@@ -251,9 +252,10 @@ C~T~ was calculated from measured pCO~2~ based on a fixed mean alkalinity value 
 
 ```{r calculate_CT_from_pCO2_Finnmaid, eval=FALSE}
 
-df <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
+df <- read.csv(here::here("data/_summarized_data_files/", file =  "fm_ngs_all_routes.csv"), as.is = TRUE)
 
-df <- df %>% 
+df <- df %>%
+  mutate(date = as.POSIXct(date)) %>% 
   select(date, var, value, route) 
 
 df <- df %>%
@@ -285,7 +287,7 @@ df <- df %>%
 
 
 df %>% 
-   vroom_write(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
+   write.csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
 rm(df)
 ```
@@ -297,10 +299,10 @@ The CO~2~ flux across the sea surface was calculated according to Wanninkhof (20
 
 ```{r calculate_gas_exchange_from_Finnmaid_pCO2_S_T_and_GETM_wind, eval=FALSE}
 
-df_1 <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
-df_2 <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"))
+df_1 <- read.csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"), as.is = TRUE)
+df_2 <- read.csv(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"), as.is = TRUE)
 
-df_2$date_time <- round_date(df_2$date_time, unit = "day")
+df_2$date_time <- round_date(as.Date(df_2$date_time, unit = "day"))
 df_2 <- df_2 %>% 
   mutate(date = as.Date(date_time)) %>% 
   select(date, U_10) %>% 
@@ -308,6 +310,7 @@ df_2 <- df_2 %>%
   summarise_all("mean") %>% 
   ungroup()
 
+df_1$date <- as.Date(df_1$date)
 
 df <- full_join(df_1, df_2, by = "date") %>% 
   arrange(date)
@@ -336,7 +339,7 @@ df <- df %>%
 
 
 df %>% 
-   vroom_write(here::here("data/_merged_data_files/", file = paste("gt_fm_flux_ngs.csv", sep = "")))
+   write.csv(here::here("data/_merged_data_files/", file = paste("gt_fm_flux_ngs.csv")))
 
 rm(df, Sc_W14)
 ```
@@ -346,7 +349,9 @@ rm(df, Sc_W14)
 ```{r visualization_CT_flux_windspeeds, fig.asp=0.5}
 
 # read CT and flux data
-gt_fm_flux_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"))
+gt_fm_flux_ngs <- read.csv(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"), as.is = TRUE)
+
+gt_fm_flux_ngs$date <- as.Date(gt_fm_flux_ngs$date)
 
 ts_xts_CT <- xts(cbind(gt_fm_flux_ngs$CT, gt_fm_flux_ngs$CT_equi), order.by = gt_fm_flux_ngs$date)
 names(ts_xts_CT) <- c("CT", "CT_equi")
@@ -363,7 +368,10 @@ names(ts_xts_flux) <- "Daily Flux"
 
 # read MLD data
 gt_mld_fm_pco2_ngs <-
-vroom::vroom(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+read.csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+
+gt_mld_fm_pco2_ngs$date <- as.Date(gt_mld_fm_pco2_ngs$date)
+
 
 ts_xts_mld5 <- xts(gt_mld_fm_pco2_ngs$value_mld5, order.by = gt_mld_fm_pco2_ngs$date)
 names(ts_xts_mld5) <- "mld_age_5"
@@ -424,32 +432,38 @@ time_high <- 09 # 09 as month September
 
 ```{r deployments}
 
-attach(df)
+df <- 
+   read_csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
 generic_date <-seq(from = as.Date("2003-01-01"), to = as.Date("2019-12-31"), by = 1)
 
 generic_date <- as.data.frame(generic_date) %>% 
-  transmute(date = generic_date)
+  mutate(date = generic_date,
+         month = month(date)) %>% 
+  select(-generic_date) %>% 
+  filter(month >= time_low & month <= time_high)
 
 df <- df %>% 
+  select(-X1) %>% 
+  mutate (month = month(date),
+          year = year(date)) %>% 
+  filter (month >= time_low & month <= time_high) %>% 
   mutate(deployment = (cumsum(c(TRUE,diff(date)>=7)))) # deployment value +1, when a data gap bigger than 7 days is found
 
 df_NA <- full_join(generic_date, df, by = "date") %>% 
-  mutate (month = month(date),
-          year = year(date)) %>% 
-  filter (month >= time_low & month <= time_high) 
-
-df_NA$deployment_2 <- factor(df$deployment,levels=levels(df$deployment))
+  mutate(month = month.x) %>% 
+  select(-c(month.x, month.y))
   
-df %>% 
-  ggplot(aes( x = date, y = year))+
-  geom_point(aes(color = deployment_2))
+df_NA$deployment_2 <- as.factor(df_NA$deployment)
+  
+#colourCount = length(unique(df_NA$deployment_2))
+#getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
-# second try, no sufficent result
-#df %>% 
-#  ggplot (aes( x = year, y = month))+
-#    geom_col(aes(fill = deployment_2))+
-#    coord_flip()+
-#  scale_color_brewer(palette = "Spectral")
+df_NA %>% 
+  ggplot(aes( x = date, y = year))+
+  geom_point(aes(color = deployment_2))#+
+  #scale_color_brewer(getPalette(colourCount))
+
+rm(df_Na, df, generic_date)
 
 ```
