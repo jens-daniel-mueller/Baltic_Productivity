@@ -41,8 +41,8 @@ select_route <- c("E", "F", "G", "W", "X")
 var <- "SSS_east"
 
 # latitude limits
-low_lat <- 57.5
-high_lat <- 58.8
+low_lat <- 58.5
+high_lat <- 59.0
 
 ```
 
@@ -257,35 +257,8 @@ df <- df %>%
   select(date, var, value, route) 
 
 df <- df %>%
- pivot_wider(values_from = value, names_from = var) %>% 
-  drop_na()
-
-#df <- df%>%
-#  mutate(sal = SSS_east,
-#         tem = SST_east,
-#         pCO2 = pCO2_east) %>%
-#  select(pCO2,tem, sal, date)
-
-# not enough RAM for pivot_wider
-# alternative with "filter"
-
-# df_sst <- df %>% 
-#   filter( var == "SST_east") %>% 
-#   mutate( tem = value) %>% 
-#   select (tem)
-# 
-# df_sss <- df %>% 
-#   filter( var == "SSS_east") %>% 
-#   mutate( sal = value) %>% 
-#   select( sal)
-# 
-# df_pco2 <- df %>% 
-#   filter( var == "pCO2_east") %>% 
-#   mutate (pCO2 = value) %>% 
-#   select( pCO2, date)
-# 
-# df <- cbind(df_pco2, df_sst, df_sss) %>% 
-#   select(date, tem, sal, pCO2)
+  drop_na() %>% 
+  pivot_wider(values_from = value, names_from = var)
 
 #calculation of CT based on pCO2 (var1) and alkalinity (var2) as input parameters
 #calculation of CT in theoretical equilibrium with atmosphere (CT_equi) based on pCO2_air (var1) and alkalinity (var2) as input parameters
@@ -293,6 +266,7 @@ df <- df %>%
 df <- df %>%
   rename(SST = SST_east,
          pCO2 = pCO2_east) %>% 
+  drop_na() %>% 
   mutate(CT = carb(24,
                    var1=pCO2,
                    var2=1650*1e-6,
@@ -314,7 +288,6 @@ df %>%
    vroom_write(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
 rm(df)
-
 ```
 
 # Air-sea CO~2~ flux

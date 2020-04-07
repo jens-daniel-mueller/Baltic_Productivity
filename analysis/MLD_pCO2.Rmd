@@ -38,8 +38,8 @@ library(vroom)
 select_route <- "E"
 
 # latitude limits
-low_lat <- 57.5
-high_lat <- 58.5
+low_lat <- 58.5
+high_lat <- 59.0
 
 ```
 # Regional pCO2 and mixed layer depths
