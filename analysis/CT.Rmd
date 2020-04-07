@@ -410,3 +410,46 @@ ts_xts_flux %>%
 rm(gt_fm_flux_ngs, gt_windspeed_ngs, fm_CT_ngs, ts_xts_CT, ts_xts_flux, ts_xts_windspeed)
 ```
 
+#Identify continous periods without data gaps
+
+```{r subsetting_criteria_II}
+
+# time
+
+time_low <- 03 # 03 as month March
+time_high <- 09 # 09 as month September
+
+```
+
+
+```{r deployments}
+
+attach(df)
+
+generic_date <-seq(from = as.Date("2003-01-01"), to = as.Date("2019-12-31"), by = 1)
+
+generic_date <- as.data.frame(generic_date) %>% 
+  transmute(date = generic_date)
+
+df <- df %>% 
+  mutate(deployment = (cumsum(c(TRUE,diff(date)>=7)))) # deployment value +1, when a data gap bigger than 7 days is found
+
+df_NA <- full_join(generic_date, df, by = "date") %>% 
+  mutate (month = month(date),
+          year = year(date)) %>% 
+  filter (month >= time_low & month <= time_high) 
+
+df_NA$deployment_2 <- factor(df$deployment,levels=levels(df$deployment))
+  
+df %>% 
+  ggplot(aes( x = date, y = year))+
+  geom_point(aes(color = deployment_2))
+
+# second try, no sufficent result
+#df %>% 
+#  ggplot (aes( x = year, y = month))+
+#    geom_col(aes(fill = deployment_2))+
+#    coord_flip()+
+#  scale_color_brewer(palette = "Spectral")
+
+```
