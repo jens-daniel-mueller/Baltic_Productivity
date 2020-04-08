@@ -275,7 +275,7 @@ ts_mld_ngs$date <- ts_mld_ngs$date %>%
 ts_mld_pco2_ngs <- full_join(ts_pco2_ngs, ts_mld_ngs, by = "date")
 
 ts_mld_pco2_ngs %>% 
-  write.csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+  write_csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
 ```
 
 ## Timeseries plots

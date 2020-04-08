@@ -33,6 +33,12 @@ library(RColorBrewer)
 
 ```
 
+
+```{r ggplot_theme, include = FALSE}
+theme_set(theme_bw())
+```
+
+
 ```{r subsetting_criteria}
 
 # route
@@ -158,7 +164,7 @@ for (var in c("SST_east", "pCO2_east")) {
 nc_close(nc)
 
 fm_ngs_all_routes %>%  
-  write.csv(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "fm_ngs_all_routes.csv"))
 
 rm(nc, fm_ngs_all_routes, latitude_east, route,date_time)
 
@@ -239,7 +245,7 @@ gt_windspeed_ngs <- gt_windspeed_ngs %>%
   select(-c(u10, v10))
 
 gt_windspeed_ngs %>% 
-  write.csv(here::here("data/_summarized_data_files/", file = paste("gt_windspeed_ngs.csv")))
+  write_csv(here::here("data/_summarized_data_files/", file = paste("gt_windspeed_ngs.csv")))
 
 rm(gt_windspeed_ngs)
 
@@ -252,10 +258,9 @@ C~T~ was calculated from measured pCO~2~ based on a fixed mean alkalinity value 
 
 ```{r calculate_CT_from_pCO2_Finnmaid, eval=FALSE}
 
-df <- read.csv(here::here("data/_summarized_data_files/", file =  "fm_ngs_all_routes.csv"), as.is = TRUE)
+df <- read_csv(here::here("data/_summarized_data_files/", file =  "fm_ngs_all_routes.csv"))
 
 df <- df %>%
-  mutate(date = as.POSIXct(date)) %>% 
   select(date, var, value, route) 
 
 df <- df %>%
@@ -287,7 +292,7 @@ df <- df %>%
 
 
 df %>% 
-   write.csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
+   write_csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
 rm(df)
 ```
@@ -299,18 +304,15 @@ The CO~2~ flux across the sea surface was calculated according to Wanninkhof (20
 
 ```{r calculate_gas_exchange_from_Finnmaid_pCO2_S_T_and_GETM_wind, eval=FALSE}
 
-df_1 <- read.csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"), as.is = TRUE)
-df_2 <- read.csv(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"), as.is = TRUE)
+df_1 <- read_csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
+df_2 <- read_csv(here::here("data/_summarized_data_files/", file = "gt_windspeed_ngs.csv"))
 
-df_2$date_time <- round_date(as.Date(df_2$date_time, unit = "day"))
 df_2 <- df_2 %>% 
   mutate(date = as.Date(date_time)) %>% 
   select(date, U_10) %>% 
   group_by(date) %>% 
   summarise_all("mean") %>% 
   ungroup()
-
-df_1$date <- as.Date(df_1$date)
 
 df <- full_join(df_1, df_2, by = "date") %>% 
   arrange(date)
@@ -339,7 +341,7 @@ df <- df %>%
 
 
 df %>% 
-   write.csv(here::here("data/_merged_data_files/", file = paste("gt_fm_flux_ngs.csv")))
+   write_csv(here::here("data/_merged_data_files/", file = paste("gt_fm_flux_ngs.csv")))
 
 rm(df, Sc_W14)
 ```
@@ -349,7 +351,7 @@ rm(df, Sc_W14)
 ```{r visualization_CT_flux_windspeeds, fig.asp=0.5}
 
 # read CT and flux data
-gt_fm_flux_ngs <- read.csv(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"), as.is = TRUE)
+gt_fm_flux_ngs <- read_csv(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"))
 
 gt_fm_flux_ngs$date <- as.Date(gt_fm_flux_ngs$date)
 
@@ -368,10 +370,10 @@ names(ts_xts_flux) <- "Daily Flux"
 
 # read MLD data
 gt_mld_fm_pco2_ngs <-
-read.csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+  read_csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
 
-gt_mld_fm_pco2_ngs$date <- as.Date(gt_mld_fm_pco2_ngs$date)
-
+gt_mld_fm_pco2_ngs <- gt_mld_fm_pco2_ngs %>% 
+  mutate(date = as.Date(date))
 
 ts_xts_mld5 <- xts(gt_mld_fm_pco2_ngs$value_mld5, order.by = gt_mld_fm_pco2_ngs$date)
 names(ts_xts_mld5) <- "mld_age_5"
@@ -415,7 +417,8 @@ ts_xts_flux %>%
   dyAxis("y", label = "Daily Flux") %>% 
   dyOptions(drawPoints = TRUE, pointSize = 1.5, connectSeparatedPoints=TRUE, strokeWidth=0.5)
 
-rm(gt_fm_flux_ngs, gt_windspeed_ngs, fm_CT_ngs, ts_xts_CT, ts_xts_flux, ts_xts_windspeed)
+rm(gt_fm_flux_ngs, gt_mld_fm_pco2_ngs,
+   ts_xts_CT, ts_xts_flux, ts_xts_mld5, ts_xts_SST, ts_xts_windspeed)
 ```
 
 #Identify continous periods without data gaps
@@ -427,6 +430,8 @@ rm(gt_fm_flux_ngs, gt_windspeed_ngs, fm_CT_ngs, ts_xts_CT, ts_xts_flux, ts_xts_w
 time_low <- 03 # 03 as month March
 time_high <- 09 # 09 as month September
 
+deployment_gap <- 7
+
 ```
 
 
@@ -435,35 +440,44 @@ time_high <- 09 # 09 as month September
 df <- 
    read_csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
-generic_date <-seq(from = as.Date("2003-01-01"), to = as.Date("2019-12-31"), by = 1)
+#generic_date <-seq(from = as.Date("2003-01-01"), to = as.Date("2019-12-31"), by = 1)
 
-generic_date <- as.data.frame(generic_date) %>% 
-  mutate(date = generic_date,
-         month = month(date)) %>% 
-  select(-generic_date) %>% 
-  filter(month >= time_low & month <= time_high)
+# generic_date <- as.data.frame(generic_date) %>% 
+#   mutate(date = generic_date,
+#          month = month(date)) %>% 
+#   select(-generic_date) %>% 
+#   filter(month >= time_low & month <= time_high)
 
 df <- df %>% 
-  select(-X1) %>% 
   mutate (month = month(date),
           year = year(date)) %>% 
   filter (month >= time_low & month <= time_high) %>% 
-  mutate(deployment = (cumsum(c(TRUE,diff(date)>=7)))) # deployment value +1, when a data gap bigger than 7 days is found
+  group_by(year) %>% 
+  mutate(deployment = 
+           as.factor(cumsum(c(TRUE,diff(date)>= deployment_gap)))) %>% # deployment +1, when data gap > 7 days
+  ungroup()
 
-df_NA <- full_join(generic_date, df, by = "date") %>% 
-  mutate(month = month.x) %>% 
-  select(-c(month.x, month.y))
-  
-df_NA$deployment_2 <- as.factor(df_NA$deployment)
+# df_NA <- full_join(generic_date, df, by = "date") %>% 
+#   mutate(month = month.x) %>% 
+#   select(-c(month.x, month.y))
+#   
+# df_NA$deployment_2 <- as.factor(df_NA$deployment)
   
 #colourCount = length(unique(df_NA$deployment_2))
 #getPalette = colorRampPalette(brewer.pal(9, "Set1"))
 
-df_NA %>% 
-  ggplot(aes( x = date, y = year))+
-  geom_point(aes(color = deployment_2))#+
-  #scale_color_brewer(getPalette(colourCount))
+df %>% 
+  ggplot(aes( x = as.Date(yday(date)), y = year, color = deployment))+
+  geom_point()+
+  scale_y_reverse(breaks = seq(2000,2030,1))+
+  theme(axis.title.x = element_blank())
+  
 
-rm(df_Na, df, generic_date)
+rm(df)
 
 ```
+
+
+# Tasks / open questions
+
+- check drop_na() before CT calculation, because thise removes quite a lot data points where only SST is missing.
