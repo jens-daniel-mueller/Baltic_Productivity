@@ -421,7 +421,7 @@ rm(gt_fm_flux_ngs, gt_mld_fm_pco2_ngs,
    ts_xts_CT, ts_xts_flux, ts_xts_mld5, ts_xts_SST, ts_xts_windspeed)
 ```
 
-#Identify continous periods without data gaps
+# Identify continous periods without data gaps
 
 ```{r subsetting_criteria_II}
 
