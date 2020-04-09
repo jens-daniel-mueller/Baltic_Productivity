@@ -122,7 +122,7 @@ rm(array, nc, t,lat, gt_sst_ngs_part)
 }
 
 gt_sst_ngs %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_ngs.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "gt_sst_ngs.csv"))
 
 rm(gt_sst_ngs, n, file, time_units)
 ```
@@ -202,7 +202,7 @@ rm(nc, time_units, t, d, array, fillvalue)
 }
 
 gt_sst_ngs_3d%>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_ngs_3d.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "gt_sst_ngs_3d.csv"))
 
 rm(gt_sst_ngs_3d, n, file, filesList_3d, filesList_2d, d1_deep,d1_shallow,var_3d,lat,i)
 
@@ -266,7 +266,7 @@ fm_sst_ngs <- fm_sst_ngs %>%
   select(-c(date))
 
 fm_sst_ngs %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "fm_sst_ngs.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "fm_sst_ngs.csv"))
 rm(array, high_lat,low_lat, nc, slice, var, fm_sst_ngs, latitude_east, date_time, route,i)
 ```
 
@@ -278,10 +278,11 @@ In the following we compare Finnmaid and GETM data. Values are to be compared pe
 
 ```{r calculate_daily_mean, eval=FALSE}
 
-gt_sst_ngs <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_ngs.csv"))
-gt_sst_ngs_3d <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_ngs_3d.csv"))
+gt_sst_ngs <- read_csv(here::here("data/_summarized_data_files/", file = "gt_sst_ngs.csv"))
+gt_sst_ngs_3d <- read_csv(here::here("data/_summarized_data_files/", file = "gt_sst_ngs_3d.csv"))
 
-gt_sst_ngs$date_time <- round_date(gt_sst_ngs$date_time, unit = "day")
+gt_sst_ngs <- gt_sst_ngs %>% 
+  mutate(date = round_date(date_time, unit = "day"))
 
 gt_sst_ngs_mean <- gt_sst_ngs %>% 
   group_by(date_time) %>% 
@@ -302,12 +303,11 @@ comparison_fm_gt_sst_ngs <- comparison_fm_gt_sst_ngs %>%
 
 comparison_fm_gt_sst_ngs_3d <- inner_join(comparison_fm_gt_sst_ngs, gt_sst_ngs_3d, by = "date_time")
 comparison_fm_gt_sst_ngs_3d <- comparison_fm_gt_sst_ngs_3d %>% 
-  select(date_time, Finnmaid_SST, GETM_SST, GETM_SST_3d=value)
-
-comparison_fm_gt_sst_ngs_3d$difference <- comparison_fm_gt_sst_ngs_3d$Finnmaid_SST - comparison_fm_gt_sst_ngs_3d$GETM_SST_3d
+  select(date_time, Finnmaid_SST, GETM_SST, GETM_SST_3d=value) %>% 
+  mutate(difference = Finnmaid_SST - GETM_SST_3d)
 
 comparison_fm_gt_sst_ngs_3d %>% 
-  vroom_write(here::here("data/_merged_data_files/", file = "comparison_fm_gt_sst_ngs_3d.csv"))
+  write_csv(here::here("data/_merged_data_files/", file = "comparison_fm_gt_sst_ngs_3d.csv"))
 
 rm(fm_sst_ngs,comparison_fm_gt_sst_ngs_3d, gt_sst_ngs_mean)
 ```
@@ -318,7 +318,7 @@ Now we plot the SST against time for both timeseries, as well as the difference 
 
 ```{r timeseries_dygraph, fig.asp=0.5}
 # create xts object for dygraph plot
-ts <- vroom::vroom(here::here("data/_merged_data_files/", file = "comparison_fm_gt_sst_ngs_3d.csv"))
+ts <- read_csv(here::here("data/_merged_data_files/", file = "comparison_fm_gt_sst_ngs_3d.csv"))
 
 ts_xts <- xts(cbind(ts$Finnmaid_SST, ts$GETM_SST, ts$GETM_SST_3d), order.by = ts$date_time)
 names(ts_xts) <- c("Finnmaid", "GETM_SST", "GETM_2-4m")
@@ -416,7 +416,7 @@ fm_sst_hov <- fm_sst_hov %>%
   select(-c(value))
 
 fm_sst_hov %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "fm_sst_hov.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "fm_sst_hov.csv"))
 
 rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,longitude_east,route,i, fm_sst_hov)
 ```
@@ -497,7 +497,7 @@ print(n)
 }
 
 gt_sst_hov %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
 
 rm(gt_sst_hov, n, file, lat, var, filesList_2d, corvector)
 ```
@@ -527,24 +527,20 @@ gt_fm_sst_hov %>%
 # gt_fm_sst_hov_nadrop %>% 
 #   vroom_write(here::here("data/_merged_data_files/", file = "gt_fm_sst_hov_nadrop.csv"))
   
-
-comparison_gt_fm_sst_hov <- gt_fm_sst_hov
-
-comparison_gt_fm_sst_hov$week <- as.Date(cut(comparison_gt_fm_sst_hov$date, breaks="weeks"))
-comparison_gt_fm_sst_hov$dist.trav <- comparison_gt_fm_sst_hov$corvector*2
-comparison_gt_fm_sst_hov$difference <- comparison_gt_fm_sst_hov$value_SST_Finn-comparison_gt_fm_sst_hov$value_SST_GETM
-
 # final data for hovmoeller plots
-comparison_gt_fm_sst_hov <- comparison_gt_fm_sst_hov %>%
-      select(value_SST_Finn, value_SST_GETM, difference,week, dist.trav) %>% 
-      dplyr::group_by(dist.trav, week) %>% 
-      summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
-      as.data.frame()
+comparison_gt_fm_sst_hov <- gt_fm_sst_hov %>% 
+  mutate(week = as.Date(cut(date, breaks="weeks")),
+         dist.trav = corvector*2,
+         difference = value_SST_Finn-value_SST_GETM) %>% 
+  select(value_SST_Finn, value_SST_GETM, difference,week, dist.trav) %>% 
+  dplyr::group_by(dist.trav, week) %>% 
+  summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
+  as_tibble()
 
 comparison_gt_fm_sst_hov %>% 
-  vroom_write(here::here("data/_merged_data_files/", file = "comparison_gt_fm_sst_hov.csv"))
+  write_csv(here::here("data/_merged_data_files/", file = "comparison_gt_fm_sst_hov.csv"))
 
-rm(comparison_gt_fm_sst_hov,gt_fm_sst_hov,gt_sst_hov, fm_sst_hov)
+rm(gt_fm_sst_hov, fm_sst_hov)
 ```
 
 ## Hovmoeller plots
@@ -555,8 +551,8 @@ Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we
 
 ```{r hovmoeller_GETM, fig.asp=5, fig.cap="Daily mean GETM SST as a function of time and the ships distance to Travemuende along route E."}
 
-gt_sst_hov <- 
-  vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
+#gt_sst_hov <- 
+#  read_csv(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
 
 gt_sst_hov <- gt_sst_hov %>% 
   mutate(date = ymd(date), 
@@ -589,8 +585,8 @@ Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we
 
 ```{r hovmoeller_Finnmaid, fig.asp=5, fig.cap="Mean weekly observed (Finnmaid) SST as a function of time and the ships distance to Travemuende along route E."}
 
-comparison_gt_fm_sst_hov <-
-    vroom::vroom(here::here("data/_merged_data_files/", file = "comparison_gt_fm_sst_hov.csv"))
+#comparison_gt_fm_sst_hov <-
+#    vroom::vroom(here::here("data/_merged_data_files/", file = #"comparison_gt_fm_sst_hov.csv"))
 
 comparison_gt_fm_sst_hov <- comparison_gt_fm_sst_hov %>% 
   mutate(year = year(week),

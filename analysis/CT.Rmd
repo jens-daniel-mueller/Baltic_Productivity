@@ -316,6 +316,7 @@ df_2 <- df_2 %>%
 
 df <- full_join(df_1, df_2, by = "date") %>% 
   arrange(date)
+
 rm(df_1,df_2)
 
 df <- df %>% 
@@ -353,7 +354,8 @@ rm(df, Sc_W14)
 # read CT and flux data
 gt_fm_flux_ngs <- read_csv(here::here("data/_merged_data_files/", file = "gt_fm_flux_ngs.csv"))
 
-gt_fm_flux_ngs$date <- as.Date(gt_fm_flux_ngs$date)
+gt_fm_flux_ngs <- gt_fm_flux_ngs %>% 
+  mutate(date = as.Date(date))
 
 ts_xts_CT <- xts(cbind(gt_fm_flux_ngs$CT, gt_fm_flux_ngs$CT_equi), order.by = gt_fm_flux_ngs$date)
 names(ts_xts_CT) <- c("CT", "CT_equi")
@@ -480,4 +482,5 @@ rm(df)
 
 # Tasks / open questions
 
-- check drop_na() before CT calculation, because thise removes quite a lot data points where only SST is missing.
+- check drop_na() before CT calculation, because thise removes quite a lot data 
+  points where only SST is missing.

@@ -70,7 +70,7 @@ lat <- ncvar_get(nc, "latc", verbose = F)
 corvector <- c(1:544)
 nc_close(nc)
 
-cor_space <- as.data.frame(cbind(lon, lat, corvector))
+cor_space <- as_tibble(cbind(lon, lat, corvector))
 
 
 rm(file, nc)
@@ -124,12 +124,12 @@ if (exists("gt_mld_hov")) {gt_mld_hov <- bind_rows(gt_mld_hov, gt_mld_hov_part)
 print(paste("gt_", var, "_hov.csv", sep = "")) # to see working progress
 
 gt_mld_hov %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = paste("gt_", var, "_hov.csv", sep = "")))
+  write_csv(here::here("data/_summarized_data_files/", file = paste("gt_", var, "_hov.csv")))
 
 rm(gt_mld_hov, n, file, time_units, var)
 }
 
-rm(a, filesList_2d, var_all, lat, lon)
+rm(a, filesList_2d, var_all, lat, lon, corvector, cor_space)
 ```
 
 
@@ -188,7 +188,7 @@ fm_pco2_ngs <- fm_pco2_ngs %>%
   select(-c(date))
 
 fm_pco2_ngs %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "fm_pco2_ngs.csv"))
+ write_csv(here::here("data/_summarized_data_files/", file = "fm_pco2_ngs.csv"))
 
 rm(array, nc, slice, var, fm_pco2_ngs, latitude_east, date_time, route,i)
 ```
@@ -218,10 +218,14 @@ lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
 corvector <- c(1:544)
 nc_close(nc)
-cor_space <- as.data.frame(cbind(lon, lat, corvector))
+
+cor_space <- cbind(lon, lat, corvector) %>% 
+  as_tibble()
+
 
 cor_space_restriction <- cor_space %>% 
   filter(lat > low_lat, lat<high_lat)
+
 low_cor <- min(cor_space_restriction$corvector)
 high_cor <- max(cor_space_restriction$corvector)
 
@@ -276,13 +280,16 @@ ts_mld_pco2_ngs <- full_join(ts_pco2_ngs, ts_mld_ngs, by = "date")
 
 ts_mld_pco2_ngs %>% 
   write_csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+
+rm(cor_space, cor_space_restriction, nc, corvector, filesList_2d, file, low_cor, high_cor, lat, lon,
+   ts_mld_pco2_ngs, ts_mld_age_1_ngs, ts_mld_age_3_ngs, ts_mld_age_5_ngs, ts_mld_rho_ngs, ts_mld_tke_ngs,       ts_mld_ngs, ts_pco2_ngs)
 ```
 
 ## Timeseries plots
 
 ```{r timeseries_pCO2_dygraphs, fig.asp=0.5}
 
-ts_mld_pco2_ngs <- vroom::vroom(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
+ts_mld_pco2_ngs <- read_csv(here::here("data/_merged_data_files/", file = "gt_mld_fm_pco2_ngs.csv"))
 
 ts_xts <- xts(cbind(ts_mld_pco2_ngs$value_mld1,ts_mld_pco2_ngs$value_mld3, ts_mld_pco2_ngs$value_mld5, ts_mld_pco2_ngs$value_mldrho, ts_mld_pco2_ngs$value_mldtke), order.by = ts_mld_pco2_ngs$date)
 names(ts_xts) <- c("MLD Age 1", "MLD Age 3", "MLD Age 5", "MLD Rho", "MLD Tke")
@@ -364,7 +371,8 @@ date_time_o <- ncvar_get(nc, "otime_east")
       #when detailed time/date information is needed, comment the following
       temp <- bind_cols(value = value, lon = longitude_east, lat = latitude_east,
       corvector =  cor_vector)
-      temp$date <- date
+      temp <- temp %>% 
+        mutate(date = date)
       # 
       
       if (exists("fm_pco2_hov", inherits = FALSE)){
@@ -382,7 +390,7 @@ fm_pco2_hov <- fm_pco2_hov %>%
   select(-c(value))
 
 fm_pco2_hov %>% 
-  vroom_write(here::here("data/_summarized_data_files/", file = "fm_pco2_hov.csv"))
+  write_csv(here::here("data/_summarized_data_files/", file = "fm_pco2_hov.csv"))
 
 rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,longitude_east,route,i)
 ```
@@ -391,7 +399,7 @@ rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,long
 
 ```{r merging_mld_pco2_nolatrestriction, eval=FALSE}
 
-ts_pCO2_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_pco2_hov.csv"))
+ts_pCO2_hov <- read_csv(here::here("data/_summarized_data_files/", file = "fm_pco2_hov.csv"))
 #ts_mld_age_1_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_1_hov.csv"))
 #ts_mld_age_3_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_3_hov.csv"))
 #ts_mld_age_5_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_5_hov.csv"))
@@ -433,7 +441,9 @@ ts_pCO2_hov$date <- ts_pCO2_hov$date %>%
 ts_mld_pco2_hov <- full_join(ts_pCO2_hov, ts_mld_hov, by =c("date","corvector"))
 
 ts_mld_pco2_hov %>% 
-vroom_write(here::here("data/_merged_data_files/", file = "ts_mld_pco2_hov.csv"))
+  write_CSV(here::here("data/_merged_data_files/", file = "ts_mld_pco2_hov.csv"))
+
+rm(ts_mld_age_1_hov, ts_mld_age_3_hov, ts_mld_age_5_hov, ts_mld_tke_hov, ts_mld_rho_hov)
 ```
 
 ## Hovmoeller Plots
@@ -585,7 +595,7 @@ ts_pco2_hov <- ts_pco2_hov %>%
   select(value_pCO2_Finn, week, dist.trav) %>% 
   dplyr::group_by(dist.trav, week) %>% 
   summarise_all(list(mean=~mean(.,na.rm=TRUE))) %>% 
-  as.data.frame() %>% 
+  as_tibble() %>% 
   mutate(year = year(week),
   value_pco2_Finn_mean = mean)
 
@@ -625,7 +635,7 @@ comparison_ts_mld_pco2_hov <- ts_mld_pco2_hov %>%
   select(relation, week, dist.trav) %>% 
   dplyr::group_by(dist.trav, week) %>% 
   summarise_all(list(relation=~mean(., na.rm = TRUE))) %>% 
-  as.data.frame %>% 
+  as_tibble() %>% 
   mutate(year = year(week))               
 
 comparison_ts_mld_pco2_hov %>%
