@@ -264,9 +264,9 @@ df <- df %>%
   select(date, var, value, route) 
 
 df <- df %>%
-  drop_na() %>% 
-  pivot_wider(values_from = value, names_from = var) #%>% 
-  #drop_na()
+  # drop_na() %>% 
+  pivot_wider(values_from = value, names_from = var) %>% 
+  drop_na()
 
 #calculation of CT based on pCO2 (var1) and alkalinity (var2) as input parameters
 #calculation of CT in theoretical equilibrium with atmosphere (CT_equi) based on pCO2_air (var1) and alkalinity (var2) as input parameters
@@ -475,7 +475,7 @@ The following criteria are implemented in the following to find periods of prima
  
  PPPs are numbered. 
  
-```{r primary_production_periods}
+```{r primary_production_periods, eval=FALSE}
 
 #criteria
 decrease <- 20
@@ -502,7 +502,7 @@ for (n in years){
   deployment <- max(deployment$deployment)
   
   for (d in 1:deployment){
-   
+
 df_ppp_temp <- df_ppp %>% 
   filter(year == n  , deployment == d) %>% 
   mutate(ppp = NA)
@@ -528,7 +528,10 @@ df_ppp_temp <- df_ppp %>%
     #df_ppp_temp <- df_ppp_temp %>% 
     #  mutate(df_ppp_temp$ppp[x] = NA)
   }
-  print(x)
+  print(paste("year:", n,
+              " *** deployment:", d,
+              " *** day:", x,
+              " *** ppp:",df_ppp_temp$ppp[x]))
     } 
   }
 }
@@ -541,4 +544,5 @@ df_ppp_temp <- df_ppp %>%
   points where only SST is missing.
   --> drop_na() before pivot_wider: leaves 2016 observations
   --> drop_na() after pivot_wider or second drop_na() just before CT calculations:            leaves 1982 observations, we loose timeperiods without SST value from: "2005-8-25"       to "2005-9-24" and "2006-01-29" to "2006-03-04"
+  --> still we need to keep drop_na() after pivot_wider for now, because CT calculation does not accept NA data in any column
   

@@ -124,7 +124,7 @@ if (exists("gt_mld_hov")) {gt_mld_hov <- bind_rows(gt_mld_hov, gt_mld_hov_part)
 print(paste("gt_", var, "_hov.csv", sep = "")) # to see working progress
 
 gt_mld_hov %>% 
-  write_csv(here::here("data/_summarized_data_files/", file = paste("gt_", var, "_hov.csv")))
+  write_csv(here::here("data/_summarized_data_files/", file = paste("gt_", var, "_hov.csv", sep = "")))
 
 rm(gt_mld_hov, n, file, time_units, var)
 }
@@ -199,11 +199,11 @@ We want a datafile including the pCO~2~ values, as measured from the Finnmaid, a
 ```{r merging_mld_pco2, eval=FALSE}
 
 ts_pco2_ngs <- vroom::vroom(here::here("data/_summarized_data_files/", file = "fm_pco2_ngs.csv"))#, na = c("NA", "NaN", "Inf", "-Inf"))
-ts_mld_age_1_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_1_hov.csv"))
-ts_mld_age_3_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_3_hov.csv"))
-ts_mld_age_5_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_5_hov.csv"))
-ts_mld_rho_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_rho_hov.csv"))
-ts_mld_tke_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_tke_hov.csv"))
+ts_mld_age_1_hov <- vroom::vroom(here::here("data/_summarized_data_files", file = "gt_mld_age_1_hov.csv"))
+ts_mld_age_3_hov <- vroom::vroom(here::here("data/_summarized_data_files", file = "gt_mld_age_3_hov.csv"))
+ts_mld_age_5_hov <- vroom::vroom(here::here("data/_summarized_data_files", file = "gt_mld_age_5_hov.csv"))
+ts_mld_rho_hov <- vroom::vroom(here::here("data/_summarized_data_files", file = "gt_mld_rho_hov.csv"))
+ts_mld_tke_hov <- vroom::vroom(here::here("data/_summarized_data_files", file = "gt_mld_tke_hov.csv"))
 
 #pCO2 Finnmaid
 ts_pco2_ngs <- ts_pco2_ngs %>% 
@@ -400,11 +400,11 @@ rm(array, nc, slice, var, date_time_o, cor_vector, date_time, latitude_east,long
 ```{r merging_mld_pco2_nolatrestriction, eval=FALSE}
 
 ts_pCO2_hov <- read_csv(here::here("data/_summarized_data_files/", file = "fm_pco2_hov.csv"))
-#ts_mld_age_1_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_1_hov.csv"))
-#ts_mld_age_3_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_3_hov.csv"))
-#ts_mld_age_5_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_5_hov.csv"))
-#ts_mld_rho_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_rho_hov.csv"))
-#ts_mld_tke_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_tke_hov.csv"))
+ts_mld_age_1_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_1_hov.csv"))
+ts_mld_age_3_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_3_hov.csv"))
+ts_mld_age_5_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_age_5_hov.csv"))
+ts_mld_rho_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_rho_hov.csv"))
+ts_mld_tke_hov <- vroom::vroom(here::here("data/_summarized_data_files/", file = "gt_mld_tke_hov.csv"))
 
 
 ts_mld_age_1_hov <- ts_mld_age_1_hov %>%
@@ -441,7 +441,7 @@ ts_pCO2_hov$date <- ts_pCO2_hov$date %>%
 ts_mld_pco2_hov <- full_join(ts_pCO2_hov, ts_mld_hov, by =c("date","corvector"))
 
 ts_mld_pco2_hov %>% 
-  write_CSV(here::here("data/_merged_data_files/", file = "ts_mld_pco2_hov.csv"))
+  write_csv(here::here("data/_merged_data_files/", file = "ts_mld_pco2_hov.csv"))
 
 rm(ts_mld_age_1_hov, ts_mld_age_3_hov, ts_mld_age_5_hov, ts_mld_tke_hov, ts_mld_rho_hov)
 ```

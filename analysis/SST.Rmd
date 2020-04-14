@@ -149,6 +149,7 @@ for (n in 1:length(filesList_3d)) {
 
 #file <- filesList_3d[8]
 file <- filesList_3d[n]
+print(file)
 
 nc <- nc_open(paste("data/", file, sep = ""))
 
@@ -194,7 +195,7 @@ array[array == fillvalue$value] <- NA
         } else {gt_sst_ngs_3d <- gt_sst_ngs_3d_part}
       
   rm(array_slice, array_slice_df, gt_sst_ngs_3d_part)
-      
+  print(i)
     }
 
 rm(nc, time_units, t, d, array, fillvalue)
@@ -551,8 +552,8 @@ Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we
 
 ```{r hovmoeller_GETM, fig.asp=5, fig.cap="Daily mean GETM SST as a function of time and the ships distance to Travemuende along route E."}
 
-#gt_sst_hov <- 
-#  read_csv(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
+gt_sst_hov <-
+ read_csv(here::here("data/_summarized_data_files/", file = "gt_sst_hov.csv"))
 
 gt_sst_hov <- gt_sst_hov %>% 
   mutate(date = ymd(date), 
@@ -585,8 +586,8 @@ Hovmoeller Plots are generated with `ggplot` and `geom_raster`. On the x axis we
 
 ```{r hovmoeller_Finnmaid, fig.asp=5, fig.cap="Mean weekly observed (Finnmaid) SST as a function of time and the ships distance to Travemuende along route E."}
 
-#comparison_gt_fm_sst_hov <-
-#    vroom::vroom(here::here("data/_merged_data_files/", file = #"comparison_gt_fm_sst_hov.csv"))
+comparison_gt_fm_sst_hov <-
+   vroom::vroom(here::here("data/_merged_data_files/", file = "comparison_gt_fm_sst_hov.csv"))
 
 comparison_gt_fm_sst_hov <- comparison_gt_fm_sst_hov %>% 
   mutate(year = year(week),
