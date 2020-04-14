@@ -478,8 +478,11 @@ The following criteria are implemented in the following to find periods of prima
 ```{r primary_production_periods, eval=FALSE}
 
 #criteria
-decrease <- 20
-timespan <- 7 #in days
+decrease_start <- 20
+timespan_start <- 7 #in days
+
+decrease_end <- 20
+timespan_end <- 7 #in days
 
 # databasis
 
@@ -488,12 +491,12 @@ df <-
 
 # identification
 
-years <- (unique(df$year))
-
-#ppp identified per year, per deployment
+#ppp identified per year, per deployment, only when CT < CT_equi
 
 df_ppp <- df %>% 
   filter(CT < CT_equi)
+
+years <- (unique(df_ppp$year))
 
 for (n in years){
   
@@ -502,39 +505,65 @@ for (n in years){
   deployment <- max(deployment$deployment)
   
   for (d in 1:deployment){
-
+   
 df_ppp_temp <- df_ppp %>% 
   filter(year == n  , deployment == d) %>% 
   mutate(ppp = NA)
 
     for (x in 1:nrow(df_ppp_temp)){
   
-    lag <- df_ppp_temp %>% 
-    filter(date >= date[x], date <= (date[x]+ duration(timespan, 'days')))
+    ##start criteria
+    lag_start <- df_ppp_temp %>% 
+    filter(date >= date[x], date <= (date[x]+ duration(timespan_start, 'days')))
 
-    roll <- which.max(lag$date) 
-    roll <- lag$CT[roll]
+    
+    roll_index <- which.max(lag_start$date) 
+    roll_value <- lag_start$CT[roll_index]
+    
+    if (is_empty(roll_value)== FALSE){
+    roll_index_df <- grep(roll_value, df_ppp_temp)
   
+    if (df_ppp_temp$CT[x]-roll_value >= decrease_start){
+    
+    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
+ 
+    } else{}
+    } else {}
+    ##end criteria
+    
+    lag_end <- df_ppp_temp %>% 
+    filter(date <= date[x], date >= (date[x]- duration(timespan_end, 'days')))
+
+    roll_index <- which.max(lag_end$date) 
+    roll_value <- lag_end$CT[roll_index]
+    
+    if (is_empty(roll_value) == FALSE){
+      
+    roll_index_df <- grep(roll_value, df_ppp_temp)
   
+    if (df_ppp_temp$CT[x]-roll_value >= decrease_end){
     
-  if (df_ppp_temp$CT[x]-roll >= 20){
+    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
+ 
+    } else{}
+    }else {next}
     
-    df_ppp_temp$ppp[x] = as.numeric(x)
-    #df_ppp_temp <- df_ppp_temp %>% 
-    #  mutate(ppp[x] = x)
-  } else{
+    if (exists("fm_ppp", inherits = FALSE)){
+        fm_ppp <- bind_rows(fm_ppp, df_ppp_temp)
+    } else{fm_ppp <- df_ppp_temp}
     
-    df_ppp_temp$ppp[x] = NA
-    #df_ppp_temp <- df_ppp_temp %>% 
-    #  mutate(df_ppp_temp$ppp[x] = NA)
-  }
-  print(paste("year:", n,
+     print(paste("year:", n,
               " *** deployment:", d,
               " *** day:", x,
               " *** ppp:",df_ppp_temp$ppp[x]))
-    } 
-  }
-}
+    
+    } #end  loop through df_ppp_temp
+  }#end of loop through deployments
+}#end of loop through years
+
+fm_ppp <- fm_ppp[!duplicated(fm_ppp),] %>% 
+  drop_na()
+
 ```
 
 
