@@ -265,7 +265,8 @@ df <- df %>%
 
 df <- df %>%
   drop_na() %>% 
-  pivot_wider(values_from = value, names_from = var)
+  pivot_wider(values_from = value, names_from = var) #%>% 
+  #drop_na()
 
 #calculation of CT based on pCO2 (var1) and alkalinity (var2) as input parameters
 #calculation of CT in theoretical equilibrium with atmosphere (CT_equi) based on pCO2_air (var1) and alkalinity (var2) as input parameters
@@ -273,7 +274,7 @@ df <- df %>%
 df <- df %>%
   rename(SST = SST_east,
          pCO2 = pCO2_east) %>% 
-  drop_na() %>% 
+  #drop_na() %>% 
   mutate(CT = carb(24,
                    var1=pCO2,
                    var2=1650*1e-6,
@@ -442,14 +443,6 @@ deployment_gap <- 7
 df <- 
    read_csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs.csv"))
 
-#generic_date <-seq(from = as.Date("2003-01-01"), to = as.Date("2019-12-31"), by = 1)
-
-# generic_date <- as.data.frame(generic_date) %>% 
-#   mutate(date = generic_date,
-#          month = month(date)) %>% 
-#   select(-generic_date) %>% 
-#   filter(month >= time_low & month <= time_high)
-
 df <- df %>% 
   mutate (month = month(date),
           year = year(date)) %>% 
@@ -459,24 +452,86 @@ df <- df %>%
            as.factor(cumsum(c(TRUE,diff(date)>= deployment_gap)))) %>% # deployment +1, when data gap > 7 days
   ungroup()
 
-# df_NA <- full_join(generic_date, df, by = "date") %>% 
-#   mutate(month = month.x) %>% 
-#   select(-c(month.x, month.y))
-#   
-# df_NA$deployment_2 <- as.factor(df_NA$deployment)
-  
-#colourCount = length(unique(df_NA$deployment_2))
-#getPalette = colorRampPalette(brewer.pal(9, "Set1"))
-
 df %>% 
   ggplot(aes( x = as.Date(yday(date)), y = year, color = deployment))+
   geom_point()+
   scale_y_reverse(breaks = seq(2000,2030,1))+
   theme(axis.title.x = element_blank())
+
+
+df %>% 
+  write_csv(here::here("data/_summarized_data_files/", file="fm_CT_ngs_deployments.csv"))
+
+```
+
+
+# Identifying primary productio periods (PPP)
+
+The following criteria are implemented in the following to find periods of primary production:
+ - CT is lower than at equilibrium with the atmosphere
+ - period must be within one deployment
+ - starts at a day followed by  week in which CT decreased at least by 20 
+ - ends at day where this is not true for the next week
+ 
+ PPPs are numbered. 
+ 
+```{r primary_production_periods}
+
+#criteria
+decrease <- 20
+timespan <- 7 #in days
+
+# databasis
+
+df <- 
+   read_csv(here::here("data/_summarized_data_files/", file = "fm_CT_ngs_deployments.csv"))
+
+# identification
+
+years <- (unique(df$year))
+
+#ppp identified per year, per deployment
+
+df_ppp <- df %>% 
+  filter(CT < CT_equi)
+
+for (n in years){
   
+  deployment <- df_ppp %>% 
+    filter(year == n)
+  deployment <- max(deployment$deployment)
+  
+  for (d in 1:deployment){
+   
+df_ppp_temp <- df_ppp %>% 
+  filter(year == n  , deployment == d) %>% 
+  mutate(ppp = NA)
 
-rm(df)
+    for (x in 1:nrow(df_ppp_temp)){
+  
+    lag <- df_ppp_temp %>% 
+    filter(date >= date[x], date <= (date[x]+ duration(timespan, 'days')))
 
+    roll <- which.max(lag$date) 
+    roll <- lag$CT[roll]
+  
+  
+    
+  if (df_ppp_temp$CT[x]-roll >= 20){
+    
+    df_ppp_temp$ppp[x] = as.numeric(x)
+    #df_ppp_temp <- df_ppp_temp %>% 
+    #  mutate(ppp[x] = x)
+  } else{
+    
+    df_ppp_temp$ppp[x] = NA
+    #df_ppp_temp <- df_ppp_temp %>% 
+    #  mutate(df_ppp_temp$ppp[x] = NA)
+  }
+  print(x)
+    } 
+  }
+}
 ```
 
 
@@ -484,3 +539,6 @@ rm(df)
 
 - check drop_na() before CT calculation, because thise removes quite a lot data 
   points where only SST is missing.
+  --> drop_na() before pivot_wider: leaves 2016 observations
+  --> drop_na() after pivot_wider or second drop_na() just before CT calculations:            leaves 1982 observations, we loose timeperiods without SST value from: "2005-8-25"       to "2005-9-24" and "2006-01-29" to "2006-03-04"
+  
