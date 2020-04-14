@@ -65,6 +65,11 @@ filesList_2d <- list.files(path= "data", pattern = "Finnmaid.E.2d.20", recursive
 file <- filesList_2d[8]
 nc <- nc_open(paste("data/", file, sep = ""))
 
+
+names(nc$var)
+index <- c(6:10) # index of wanted mld parameter variables 
+var_all <- c(names(nc$var[index]))
+
 lon <- ncvar_get(nc, "lonc")
 lat <- ncvar_get(nc, "latc", verbose = F)
 corvector <- c(1:544)
@@ -75,9 +80,7 @@ cor_space <- as_tibble(cbind(lon, lat, corvector))
 
 rm(file, nc)
 
-for (a in 1:5){
-
-  var <- var_all[a]
+for (var in var_all){
 
 
 for (n in 1:length(filesList_2d)) {
