@@ -484,7 +484,7 @@ The following criteria are implemented in the following to find periods of prima
  
  PPPs are numbered. 
  
-```{r primary_production_periods}
+```{r primary_production_periods, fig.asp=1.5}
 
 #criteria
 decrease_start <- 20
