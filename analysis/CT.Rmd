@@ -483,7 +483,7 @@ The following criteria are implemented in the following to find periods of prima
  
  PPPs are numbered. 
  
-```{r primary_production_periods, eval=FALSE}
+```{r primary_production_periods}
 
 #criteria
 decrease_start <- 20
@@ -569,17 +569,41 @@ df_ppp_temp <- df_ppp %>%
   }#end of loop through deployments
 }#end of loop through years
 
-fm_ppp <- fm_ppp[!duplicated(fm_ppp),] %>% 
+fm_ppp_dup <- fm_ppp[!duplicated(fm_ppp),] %>% 
+  arrange(date)
+
+fm_ppp_dup_na <- fm_ppp_dup %>% 
   drop_na()
 
+ggplot()+
+  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), year, color = as.factor(ppp)))+
+  scale_y_reverse(breaks = seq(2000,2030,1))+
+  theme(axis.title.x = element_blank())
+
+
 ```
+
+
+# CT during PPP
+
+```{r CT_timeseries_yearly_PPP, fig.asp=2}
+
+
+ggplot()+
+  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), CT, color = as.factor(ppp)))+
+  theme(axis.title.x = element_blank())+
+  facet_grid(year~.)
+
+
+```
+
 
 
 # Tasks / open questions
 
 - check drop_na() before CT calculation, because thise removes quite a lot data 
   points where only SST is missing.
-  --> drop_na() before pivot_wider: leaves 2016 observations
-  --> drop_na() after pivot_wider or second drop_na() just before CT calculations:            leaves 1982 observations, we loose timeperiods without SST value from: "2005-8-25"       to "2005-9-24" and "2006-01-29" to "2006-03-04"
-  --> still we need to keep drop_na() after pivot_wider for now, because CT calculation does not accept NA data in any column
+  - drop_na() before pivot_wider: leaves 2016 observations
+  - drop_na() after pivot_wider or second drop_na() just before CT calculations:            leaves 1982 observations, we loose timeperiods without SST value from: "2005-8-25"       to "2005-9-24" and "2006-01-29" to "2006-03-04"
+  - still we need to keep drop_na() after pivot_wider for now, because CT calculation does not accept NA data in any column
   
