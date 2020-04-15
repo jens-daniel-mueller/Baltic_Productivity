@@ -121,7 +121,7 @@ pCO~2~ and SST observations in NGS were extracted for all crossings.
 ```{r fm_ngs_all_routes}
 nc <- nc_open(paste("data/Finnmaid/", "FM_all_2019_on_standard_tracks.nc", sep = ""))
 
-names(nc$var)
+#names(nc$var) # uncomment to print variable names and select relevant index
 index <- c(9,11) #index of wanted variables SST_east and pCO2 east
 var_all <- c(names(nc$var[index]))
 
@@ -476,10 +476,11 @@ df %>%
 # Identifying primary productio periods (PPP)
 
 The following criteria are implemented in the following to find periods of primary production:
- - CT is lower than at equilibrium with the atmosphere
- - period must be within one deployment
- - starts at a day followed by  week in which CT decreased at least by 20 
- - ends at day where this is not true for the next week
+
+- CT is lower than at equilibrium with the atmosphere
+- period must be within one deployment
+- starts at a day followed by  week in which CT decreased at least by 20 
+- ends at day where this is not true for the next week
  
  PPPs are numbered. 
  
@@ -560,10 +561,10 @@ df_ppp_temp <- df_ppp %>%
         fm_ppp <- bind_rows(fm_ppp, df_ppp_temp)
     } else{fm_ppp <- df_ppp_temp}
     
-     print(paste("year:", n,
-              " *** deployment:", d,
-              " *** day:", x,
-              " *** ppp:",df_ppp_temp$ppp[x]))
+     # print(paste("year:", n,
+     #          " *** deployment:", d,
+     #          " *** day:", x,
+     #          " *** ppp:",df_ppp_temp$ppp[x]))
     
     } #end  loop through df_ppp_temp
   }#end of loop through deployments
@@ -578,7 +579,8 @@ fm_ppp_dup_na <- fm_ppp_dup %>%
 ggplot()+
   geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), year, color = as.factor(ppp)))+
   scale_y_reverse(breaks = seq(2000,2030,1))+
-  theme(axis.title.x = element_blank())
+  theme(axis.title.x = element_blank(),
+        legend.position = "bottom")
 
 
 ```
@@ -586,12 +588,13 @@ ggplot()+
 
 # CT during PPP
 
-```{r CT_timeseries_yearly_PPP, fig.asp=2}
+```{r CT_timeseries_yearly_PPP, fig.asp=3}
 
 
 ggplot()+
   geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), CT, color = as.factor(ppp)))+
-  theme(axis.title.x = element_blank())+
+  theme(axis.title.x = element_blank(),
+        legend.position = "bottom")+
   facet_grid(year~.)
 
 
