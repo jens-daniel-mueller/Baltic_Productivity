@@ -511,34 +511,46 @@ for (n in years){
   
   deployment <- df_ppp %>% 
     filter(year == n)
-  deployment <- max(deployment$deployment)
+    deployment <- max(deployment$deployment)
   
   for (d in 1:deployment){
    
-df_ppp_temp <- df_ppp %>% 
-  filter(year == n  , deployment == d) %>% 
-  mutate(ppp = NA)
+    df_ppp_temp <- df_ppp %>% 
+      filter(year == n  , deployment == d) %>% 
+      mutate(ppp = NA)
 
     for (x in 1:nrow(df_ppp_temp)){
   
     ##start criteria
     lag_start <- df_ppp_temp %>% 
     filter(date >= date[x], date <= (date[x]+ duration(timespan_start, 'days')))
-
     
-    roll_index <- which.max(lag_start$date) 
+    #roll_index <- which.max(lag_start$date) 
+    roll_index <- which.min(lag_start$CT)  #Minimum CT-value in 7 day forward
     roll_value <- lag_start$CT[roll_index]
     
     if (is_empty(roll_value)== FALSE){
-    roll_index_df <- grep(roll_value, df_ppp_temp)
+    
+    roll_index_df <- df_ppp_temp %>%
+    mutate(row_no = row_number()) %>%
+    filter(CT == roll_value) %>%
+    select(row_no) %>% 
+    as.numeric()
   
-    if (df_ppp_temp$CT[x]-roll_value >= decrease_start){
+    if (df_ppp_temp$CT[x]-roll_value >= decrease_start) {
+    
+    start <- TRUE #condition for end-criteria
     
     df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
  
-    } else{}
-    } else {}
+    } else{df_ppp_temp$ppp[x] = NA
+           start <- FALSE}
+    
+    } else {start <- FALSE}
+    
     ##end criteria
+    
+    if (start == TRUE){
     
     lag_end <- df_ppp_temp %>% 
     filter(date <= date[x], date >= (date[x]- duration(timespan_end, 'days')))
@@ -555,16 +567,18 @@ df_ppp_temp <- df_ppp %>%
     df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
  
     } else{}
-    }else {next}
+    
+    } else {next}
     
     if (exists("fm_ppp", inherits = FALSE)){
         fm_ppp <- bind_rows(fm_ppp, df_ppp_temp)
-    } else{fm_ppp <- df_ppp_temp}
+        }else{fm_ppp <- df_ppp_temp}
     
-     # print(paste("year:", n,
-     #          " *** deployment:", d,
-     #          " *** day:", x,
-     #          " *** ppp:",df_ppp_temp$ppp[x]))
+    rm(lag_end)
+    
+      }#end start == TRUE condition
+    
+    rm(start, roll_index_df, roll_index, roll_value, lag_start)
     
     } #end  loop through df_ppp_temp
   }#end of loop through deployments
@@ -583,6 +597,15 @@ ggplot()+
         legend.position = "bottom")
 
 
+# enumeration of ppps, remove duplicates again
+fm_ppp_final <- fm_ppp_dup_na %>% 
+ mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)>= deployment_gap))))
+
+fm_ppp_final <- fm_ppp_final[!duplicated(fm_ppp_final),]
+
+fm_ppp_final %>% 
+  write_csv(here::here("data/_summarized_data_files/", file = "fm_ppp_ngs.csv"))
+
 ```
 
 
@@ -590,13 +613,11 @@ ggplot()+
 
 ```{r CT_timeseries_yearly_PPP, fig.asp=3}
 
-
 ggplot()+
-  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), CT, color = as.factor(ppp)))+
+  geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), CT, color = as.factor(ppp)))+
   theme(axis.title.x = element_blank(),
         legend.position = "bottom")+
   facet_grid(year~.)
-
 
 ```
 
