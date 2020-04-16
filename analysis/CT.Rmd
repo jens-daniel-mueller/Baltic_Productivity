@@ -611,10 +611,24 @@ fm_ppp_final %>%
 
 # CT during PPP
 
-```{r CT_timeseries_yearly_PPP, fig.asp=3}
+```{r CT_timeseries_yearly_PPP, fig.asp=4}
 
 ggplot()+
+  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), CT), color = "grey")+
   geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), CT, color = as.factor(ppp)))+
+  theme(axis.title.x = element_blank(),
+        legend.position = "bottom")+
+  facet_grid(year~.)
+
+```
+
+# SST during PPP
+
+```{r SST_timeseries_yearly_PPP, fig.asp=4}
+
+ggplot()+
+  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), SST), color = "grey")+
+  geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), SST, color = as.factor(ppp)))+
   theme(axis.title.x = element_blank(),
         legend.position = "bottom")+
   facet_grid(year~.)
@@ -628,6 +642,6 @@ ggplot()+
 - check drop_na() before CT calculation, because thise removes quite a lot data 
   points where only SST is missing.
   - drop_na() before pivot_wider: leaves 2016 observations
-  - drop_na() after pivot_wider or second drop_na() just before CT calculations:            leaves 1982 observations, we loose timeperiods without SST value from: "2005-8-25"       to "2005-9-24" and "2006-01-29" to "2006-03-04"
+  - drop_na() after pivot_wider or second drop_na() just before CT calculations: leaves 1982 observations, we loose timeperiods without SST value from: "2005-8-25"       to "2005-9-24" and "2006-01-29" to "2006-03-04"
   - still we need to keep drop_na() after pivot_wider for now, because CT calculation does not accept NA data in any column
   
