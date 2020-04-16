@@ -29,7 +29,6 @@ library(xts)
 library(here)
 library(seacarb)
 library(zoo)
-library(RColorBrewer)
 
 ```
 
@@ -502,73 +501,89 @@ df <-
 
 #ppp identified per year, per deployment, only when CT < CT_equi
 
+
 df_ppp <- df %>% 
   filter(CT < CT_equi)
 
 years <- (unique(df_ppp$year))
 
+# first of three loops, loops through each observatio year
+# we get the number of deployments within this year for further analysis
 for (n in years){
   
   deployment <- df_ppp %>% 
     filter(year == n)
     deployment <- max(deployment$deployment)
-  
+    
+  # second of three loops, loops through each deployment within on year
   for (d in 1:deployment){
    
     df_ppp_temp <- df_ppp %>% 
       filter(year == n  , deployment == d) %>% 
       mutate(ppp = NA)
-
+    # third of three loops, within on deployment of year n, we check ppp criteria for every row
     for (x in 1:nrow(df_ppp_temp)){
   
     ##start criteria
+    # define subdataset looking forward "timespan_start" days
     lag_start <- df_ppp_temp %>% 
     filter(date >= date[x], date <= (date[x]+ duration(timespan_start, 'days')))
     
+    
     #roll_index <- which.max(lag_start$date) 
     roll_index <- which.min(lag_start$CT)  #Minimum CT-value in 7 day forward
-    roll_value <- lag_start$CT[roll_index]
+    roll_value <- lag_start$CT[roll_index] # get exact minimum CT value within subdataset 
     
+    # we only proceed, if there is a minimum CT value
     if (is_empty(roll_value)== FALSE){
     
+    # get index of exact CT value in whole dataset 
+    roll_index_df <- df_ppp_temp %>%
+    mutate(row_no = row_number()) %>%
+    filter(CT == roll_value) %>%
+    select(row_no) %>% 
+    as.numeric()
+    
+    # second if-condition for start criteria; is CT value of current loop date x more than "decrease_start" higher tha minimum CT in 7 day forward
+    
+    if (df_ppp_temp$CT[x]-roll_value >= decrease_start) {
+    
+    start <- TRUE #condition for end-criteria; only TRUE when there was the necessary decrease
+    
+    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x) #loop date x : minimum CT within 7 days forward get assigned the same ppp
+ 
+    } else{df_ppp_temp$ppp[x] = NA
+           start <- FALSE}
+    rm(roll_index_df)
+    } else {start <- FALSE} #if we don't have a roll_value or the criterion of decrease is not met start is set FALSE, so that end criteria don't kick in without a start
+    
+    ##end criteria
+    
+    #was there a start? then same procdure as for start criterion but looking backwards
+    if (start == TRUE){
+    
+    lag_end <- df_ppp_temp %>% 
+    filter(date <= date[x], date >= (date[x]- duration(timespan_end, 'days')))
+
+    #roll_index <- which.max(lag_end$date) 
+    roll_index <- which.min(lag_end$CT)
+    roll_value <- lag_end$CT[roll_index]
+    
+    if (is_empty(roll_value) == FALSE){ #at the start of the loop we can't look backwards
+      
     roll_index_df <- df_ppp_temp %>%
     mutate(row_no = row_number()) %>%
     filter(CT == roll_value) %>%
     select(row_no) %>% 
     as.numeric()
   
-    if (df_ppp_temp$CT[x]-roll_value >= decrease_start) {
-    
-    start <- TRUE #condition for end-criteria
-    
-    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
- 
-    } else{df_ppp_temp$ppp[x] = NA
-           start <- FALSE}
-    
-    } else {start <- FALSE}
-    
-    ##end criteria
-    
-    if (start == TRUE){
-    
-    lag_end <- df_ppp_temp %>% 
-    filter(date <= date[x], date >= (date[x]- duration(timespan_end, 'days')))
-
-    roll_index <- which.max(lag_end$date) 
-    roll_value <- lag_end$CT[roll_index]
-    
-    if (is_empty(roll_value) == FALSE){
-      
-    roll_index_df <- grep(roll_value, df_ppp_temp)
-  
     if (df_ppp_temp$CT[x]-roll_value >= decrease_end){
     
-    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
- 
-    } else{}
+    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x) #loop date x : minimum CT within 7 days backwards get assigned the same ppp, if criterion was met
+ rm(roll_index_df)
+    } else{} #if criterion is not met, we do nothing as NAs are already assigned in start and this would potentially overwrite an existing ppp entry
     
-    } else {next}
+    } else {next} #if we can't look backwards, we jump to the next loop iteration
     
     if (exists("fm_ppp", inherits = FALSE)){
         fm_ppp <- bind_rows(fm_ppp, df_ppp_temp)
@@ -578,12 +593,13 @@ for (n in years){
     
       }#end start == TRUE condition
     
-    rm(start, roll_index_df, roll_index, roll_value, lag_start)
+    rm(start, roll_index, roll_value, lag_start)
     
     } #end  loop through df_ppp_temp
   }#end of loop through deployments
 }#end of loop through years
 
+# remove duplicates and NAs
 fm_ppp_dup <- fm_ppp[!duplicated(fm_ppp),] %>% 
   arrange(date)
 
@@ -597,7 +613,7 @@ ggplot()+
         legend.position = "bottom")
 
 
-# enumeration of ppps, remove duplicates again
+# enumeration of ppps, remove duplicates again 
 fm_ppp_final <- fm_ppp_dup_na %>% 
  mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)>= deployment_gap))))
 
