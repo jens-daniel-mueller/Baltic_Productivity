@@ -492,6 +492,8 @@ timespan_start <- 7 #in days
 decrease_end <- 20
 timespan_end <- 7 #in days
 
+ppp_gap <- 4 #in days
+
 # databasis
 
 df <- 
@@ -551,7 +553,7 @@ for (n in years){
     start <- TRUE #condition for end-criteria; only TRUE when there was the necessary decrease
     
     df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x) #loop date x : minimum CT within 7 days forward get assigned the same ppp
- 
+    
     } else{df_ppp_temp$ppp[x] = NA
            start <- FALSE}
     rm(roll_index_df)
@@ -566,7 +568,7 @@ for (n in years){
     filter(date <= date[x], date >= (date[x]- duration(timespan_end, 'days')))
 
     #roll_index <- which.max(lag_end$date) 
-    roll_index <- which.min(lag_end$CT)
+    roll_index <- which.max(lag_end$CT) #in contrast to start we search for the maximum CT value here when looking backwards
     roll_value <- lag_end$CT[roll_index]
     
     if (is_empty(roll_value) == FALSE){ #at the start of the loop we can't look backwards
@@ -615,12 +617,14 @@ ggplot()+
 
 # enumeration of ppps, remove duplicates again 
 fm_ppp_final <- fm_ppp_dup_na %>% 
- mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)>= deployment_gap))))
+  group_by(year) %>% 
+ mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)>= ppp_gap))))
 
 fm_ppp_final <- fm_ppp_final[!duplicated(fm_ppp_final),]
 
 fm_ppp_final %>% 
   write_csv(here::here("data/_summarized_data_files/", file = "fm_ppp_ngs.csv"))
+
 
 ```
 
