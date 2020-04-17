@@ -426,7 +426,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">CT</h1>
 <h4 class="author">Jens Daniel Müller &amp; Lara Burchardt</h4>
-<h4 class="date">16 April, 2020</h4>
+<h4 class="date">17 April, 2020</h4>
 
 </div>
 
@@ -451,7 +451,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2020-04-16
+<strong>Last updated:</strong> 2020-04-17
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -542,16 +542,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree5340b369c09155a696da8b00cad14c3a8d956027targetblank5340b36a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/5340b369c09155a696da8b00cad14c3a8d956027" target="_blank">5340b36</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree7507a935c69308cf5bb70ae7b110cb031b5f8111targetblank7507a93a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/7507a935c69308cf5bb70ae7b110cb031b5f8111" target="_blank">7507a93</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree5340b369c09155a696da8b00cad14c3a8d956027targetblank5340b36a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree7507a935c69308cf5bb70ae7b110cb031b5f8111targetblank7507a93a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/5340b369c09155a696da8b00cad14c3a8d956027" target="_blank">5340b36</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/7507a935c69308cf5bb70ae7b110cb031b5f8111" target="_blank">7507a93</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -604,6 +604,74 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/7507a935c69308cf5bb70ae7b110cb031b5f8111/analysis/CT.Rmd" target="_blank">7507a93</a>
+</td>
+<td>
+jens-daniel-mueller
+</td>
+<td>
+2020-04-17
+</td>
+<td>
+PPP labeling with 4 day gap
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/8ea672dae7848c5be61946dc9ca931fe5347c1be/analysis/CT.Rmd" target="_blank">8ea672d</a>
+</td>
+<td>
+LSBurchardt
+</td>
+<td>
+2020-04-16
+</td>
+<td>
+#3 end criterion corrected, ppps colored per year
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/33a1b7452ef05e8467dbde94d6dca301c79bdbe3/analysis/CT.Rmd" target="_blank">33a1b74</a>
+</td>
+<td>
+LSBurchardt
+</td>
+<td>
+2020-04-16
+</td>
+<td>
+#3 commented, prevented from getting rm() warning
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/e62e49c10e6af498b0b9232b984668558fb02b7b/docs/CT.html" target="_blank">e62e49c</a>
+</td>
+<td>
+jens-daniel-mueller
+</td>
+<td>
+2020-04-16
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1368,8 +1436,7 @@ library(dygraphs)
 library(xts)
 library(here)
 library(seacarb)
-library(zoo)
-library(RColorBrewer)</code></pre>
+library(zoo)</code></pre>
 <pre class="r"><code># route
 select_route &lt;- c(&quot;E&quot;, &quot;F&quot;, &quot;G&quot;, &quot;W&quot;, &quot;X&quot;) 
 
@@ -1781,6 +1848,8 @@ timespan_start &lt;- 7 #in days
 decrease_end &lt;- 20
 timespan_end &lt;- 7 #in days
 
+ppp_gap &lt;- 4 #in days
+
 # databasis
 
 df &lt;- 
@@ -1790,73 +1859,89 @@ df &lt;-
 
 #ppp identified per year, per deployment, only when CT &lt; CT_equi
 
+
 df_ppp &lt;- df %&gt;% 
   filter(CT &lt; CT_equi)
 
 years &lt;- (unique(df_ppp$year))
 
+# first of three loops, loops through each observatio year
+# we get the number of deployments within this year for further analysis
 for (n in years){
   
   deployment &lt;- df_ppp %&gt;% 
     filter(year == n)
     deployment &lt;- max(deployment$deployment)
-  
+    
+  # second of three loops, loops through each deployment within on year
   for (d in 1:deployment){
    
     df_ppp_temp &lt;- df_ppp %&gt;% 
       filter(year == n  , deployment == d) %&gt;% 
       mutate(ppp = NA)
-
+    # third of three loops, within on deployment of year n, we check ppp criteria for every row
     for (x in 1:nrow(df_ppp_temp)){
   
     ##start criteria
+    # define subdataset looking forward &quot;timespan_start&quot; days
     lag_start &lt;- df_ppp_temp %&gt;% 
     filter(date &gt;= date[x], date &lt;= (date[x]+ duration(timespan_start, &#39;days&#39;)))
     
+    
     #roll_index &lt;- which.max(lag_start$date) 
     roll_index &lt;- which.min(lag_start$CT)  #Minimum CT-value in 7 day forward
-    roll_value &lt;- lag_start$CT[roll_index]
+    roll_value &lt;- lag_start$CT[roll_index] # get exact minimum CT value within subdataset 
     
+    # we only proceed, if there is a minimum CT value
     if (is_empty(roll_value)== FALSE){
     
+    # get index of exact CT value in whole dataset 
+    roll_index_df &lt;- df_ppp_temp %&gt;%
+    mutate(row_no = row_number()) %&gt;%
+    filter(CT == roll_value) %&gt;%
+    select(row_no) %&gt;% 
+    as.numeric()
+    
+    # second if-condition for start criteria; is CT value of current loop date x more than &quot;decrease_start&quot; higher tha minimum CT in 7 day forward
+    
+    if (df_ppp_temp$CT[x]-roll_value &gt;= decrease_start) {
+    
+    start &lt;- TRUE #condition for end-criteria; only TRUE when there was the necessary decrease
+    
+    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x) #loop date x : minimum CT within 7 days forward get assigned the same ppp
+    
+    } else{df_ppp_temp$ppp[x] = NA
+           start &lt;- FALSE}
+    rm(roll_index_df)
+    } else {start &lt;- FALSE} #if we don&#39;t have a roll_value or the criterion of decrease is not met start is set FALSE, so that end criteria don&#39;t kick in without a start
+    
+    ##end criteria
+    
+    #was there a start? then same procdure as for start criterion but looking backwards
+    if (start == TRUE){
+    
+    lag_end &lt;- df_ppp_temp %&gt;% 
+    filter(date &lt;= date[x], date &gt;= (date[x]- duration(timespan_end, &#39;days&#39;)))
+
+    #roll_index &lt;- which.max(lag_end$date) 
+    roll_index &lt;- which.max(lag_end$CT) #in contrast to start we search for the maximum CT value here when looking backwards
+    roll_value &lt;- lag_end$CT[roll_index]
+    
+    if (is_empty(roll_value) == FALSE){ #at the start of the loop we can&#39;t look backwards
+      
     roll_index_df &lt;- df_ppp_temp %&gt;%
     mutate(row_no = row_number()) %&gt;%
     filter(CT == roll_value) %&gt;%
     select(row_no) %&gt;% 
     as.numeric()
   
-    if (df_ppp_temp$CT[x]-roll_value &gt;= decrease_start) {
-    
-    start &lt;- TRUE #condition for end-criteria
-    
-    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
- 
-    } else{df_ppp_temp$ppp[x] = NA
-           start &lt;- FALSE}
-    
-    } else {start &lt;- FALSE}
-    
-    ##end criteria
-    
-    if (start == TRUE){
-    
-    lag_end &lt;- df_ppp_temp %&gt;% 
-    filter(date &lt;= date[x], date &gt;= (date[x]- duration(timespan_end, &#39;days&#39;)))
-
-    roll_index &lt;- which.max(lag_end$date) 
-    roll_value &lt;- lag_end$CT[roll_index]
-    
-    if (is_empty(roll_value) == FALSE){
-      
-    roll_index_df &lt;- grep(roll_value, df_ppp_temp)
-  
     if (df_ppp_temp$CT[x]-roll_value &gt;= decrease_end){
     
-    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x)
- 
-    } else{}
+    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(x) #loop date x : minimum CT within 7 days backwards get assigned the same ppp, if criterion was met
+ rm(roll_index_df)
+    } else{} #if criterion is not met, we do nothing as NAs are already assigned in start and this would potentially overwrite an existing ppp entry
     
-    } else {next}
+    } else {next} #if we can&#39;t look backwards, we jump to the next loop iteration
     
     if (exists(&quot;fm_ppp&quot;, inherits = FALSE)){
         fm_ppp &lt;- bind_rows(fm_ppp, df_ppp_temp)
@@ -1866,12 +1951,13 @@ for (n in years){
     
       }#end start == TRUE condition
     
-    rm(start, roll_index_df, roll_index, roll_value, lag_start)
+    rm(start, roll_index, roll_value, lag_start)
     
     } #end  loop through df_ppp_temp
   }#end of loop through deployments
 }#end of loop through years
 
+# remove duplicates and NAs
 fm_ppp_dup &lt;- fm_ppp[!duplicated(fm_ppp),] %&gt;% 
   arrange(date)
 
@@ -1884,9 +1970,11 @@ ggplot()+
   theme(axis.title.x = element_blank(),
         legend.position = &quot;bottom&quot;)</code></pre>
 <p><img src="figure/CT.Rmd/primary_production_periods-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code># enumeration of ppps, remove duplicates again
+<pre class="r"><code># enumeration of ppps, remove duplicates again 
 fm_ppp_final &lt;- fm_ppp_dup_na %&gt;% 
- mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)&gt;= deployment_gap))))
+  group_by(year) %&gt;%
+  mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)&gt;= ppp_gap)))) %&gt;% 
+  ungroup()
 
 fm_ppp_final &lt;- fm_ppp_final[!duplicated(fm_ppp_final),]
 
@@ -1946,12 +2034,12 @@ attached base packages:
 [1] stats     graphics  grDevices utils     datasets  methods   base     
 
 other attached packages:
- [1] RColorBrewer_1.1-2 seacarb_3.2.13     oce_1.2-0          gsw_1.0-5         
- [5] testthat_2.3.2     here_0.1           xts_0.12-0         zoo_1.8-7         
- [9] dygraphs_1.1.1.6   geosphere_1.5-10   lubridate_1.7.4    vroom_1.2.0       
-[13] ncdf4_1.17         forcats_0.5.0      stringr_1.4.0      dplyr_0.8.5       
-[17] purrr_0.3.3        readr_1.3.1        tidyr_1.0.2        tibble_3.0.0      
-[21] ggplot2_3.3.0      tidyverse_1.3.0    workflowr_1.6.1   
+ [1] seacarb_3.2.13   oce_1.2-0        gsw_1.0-5        testthat_2.3.2  
+ [5] here_0.1         xts_0.12-0       zoo_1.8-7        dygraphs_1.1.1.6
+ [9] geosphere_1.5-10 lubridate_1.7.4  vroom_1.2.0      ncdf4_1.17      
+[13] forcats_0.5.0    stringr_1.4.0    dplyr_0.8.5      purrr_0.3.3     
+[17] readr_1.3.1      tidyr_1.0.2      tibble_3.0.0     ggplot2_3.3.0   
+[21] tidyverse_1.3.0  workflowr_1.6.1 
 
 loaded via a namespace (and not attached):
  [1] Rcpp_1.0.4        whisker_0.4       knitr_1.28        xml2_1.3.0       
