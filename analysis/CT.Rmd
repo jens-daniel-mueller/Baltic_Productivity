@@ -463,6 +463,9 @@ df %>%
   ggplot(aes( x = as.Date(yday(date)), y = year, color = deployment))+
   geom_point()+
   scale_y_reverse(breaks = seq(2000,2030,1))+
+  scale_x_date(date_minor_breaks = "week",
+               date_labels = "%b")+
+  scale_color_brewer(palette = "Set1", name="PPP")+
   theme(axis.title.x = element_blank())
 
 
@@ -483,7 +486,7 @@ The following criteria are implemented in the following to find periods of prima
  
  PPPs are numbered. 
  
-```{r primary_production_periods, fig.asp=1.5}
+```{r primary_production_periods}
 
 #criteria
 decrease_start <- 20
