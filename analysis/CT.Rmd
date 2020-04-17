@@ -617,8 +617,9 @@ ggplot()+
 
 # enumeration of ppps, remove duplicates again 
 fm_ppp_final <- fm_ppp_dup_na %>% 
-  group_by(year) %>% 
- mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)>= ppp_gap))))
+  group_by(year) %>%
+  mutate(ppp = as.factor(cumsum(c(TRUE,diff(date)>= ppp_gap)))) %>% 
+  ungroup()
 
 fm_ppp_final <- fm_ppp_final[!duplicated(fm_ppp_final),]
 
