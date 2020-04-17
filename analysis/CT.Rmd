@@ -639,7 +639,7 @@ fm_ppp_final <- fm_ppp_dup_na %>%
 fm_ppp_final <- fm_ppp_final[!duplicated(fm_ppp_final),]
 
 ggplot()+
-  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), year), col="grey")+
+  geom_point(data = df, aes(as.Date(yday(date)), year), col="grey")+
   geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), year, col = as.factor(ppp)))+
   scale_y_reverse(breaks = seq(2000,2030,1))+
   scale_x_date(date_minor_breaks = "week",
@@ -659,7 +659,7 @@ fm_ppp_final %>%
 ```{r CT_timeseries_yearly_PPP, fig.asp=4}
 
 ggplot()+
-  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), CT), color = "grey")+
+  geom_point(data = df, aes(as.Date(yday(date)), CT), color = "grey")+
   geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), CT, color = as.factor(ppp)))+
   scale_y_continuous(breaks = seq(1000,2000,100),
                      minor_breaks = seq(1000,2000,20))+
@@ -677,7 +677,7 @@ ggplot()+
 ```{r SST_timeseries_yearly_PPP, fig.asp=4}
 
 ggplot()+
-  geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), SST), color = "grey")+
+  geom_point(data = df, aes(as.Date(yday(date)), SST), color = "grey")+
   geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), SST, color = as.factor(ppp)))+
   scale_x_date(date_minor_breaks = "week",
                date_labels = "%b")+
