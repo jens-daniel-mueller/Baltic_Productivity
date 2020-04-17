@@ -431,9 +431,9 @@ rm(gt_fm_flux_ngs, gt_mld_fm_pco2_ngs,
    ts_xts_CT, ts_xts_flux, ts_xts_mld5, ts_xts_SST, ts_xts_windspeed)
 ```
 
-# Identify continous periods without data gaps
+# Identification of continous deployment periods
 
-```{r subsetting_criteria_II}
+```{r deployment_criteria}
 
 # time
 
@@ -444,6 +444,7 @@ deployment_gap <- 7
 
 ```
 
+- The maximum allowed gap was defined as `r deployment_gap` day.
 
 ```{r deployments}
 
@@ -475,18 +476,9 @@ df %>%
 ```
 
 
-# Identifying primary productio periods (PPP)
+# Identification of primary production periods (PPP)
 
-The following criteria are implemented in the following to find periods of primary production:
-
-- CT is lower than at equilibrium with the atmosphere
-- period must be within one deployment
-- starts at a day followed by  week in which CT decreased at least by 20 
-- ends at day where this is not true for the next week
- 
- PPPs are numbered. 
- 
-```{r primary_production_periods}
+```{r PPP_criteria}
 
 #criteria
 decrease_start <- 20
@@ -495,6 +487,19 @@ timespan_start <- 7 #in days
 decrease_end <- 20
 timespan_end <- 7 #in days
 
+```
+
+
+The following criteria are implemented in the following to find periods of primary production:
+
+- CT is lower than at equilibrium with the atmosphere
+- period must be within one deployment
+- starts at a day followed by `r timespan_start` days in which CT decreased at least by `r decrease_start` 
+- ends at day where the CT drop was below `r decrease_end` for the previous `r timespan_end`
+ 
+PPPs are numbered. 
+ 
+```{r primary_production_periods}
 
 # databasis
 
@@ -649,7 +654,7 @@ fm_ppp_final %>%
 ```
 
 
-# CT during PPP
+## CT yearly time series
 
 ```{r CT_timeseries_yearly_PPP, fig.asp=4}
 
@@ -667,15 +672,13 @@ ggplot()+
 
 ```
 
-# SST during PPP
+## SST yearly time series
 
 ```{r SST_timeseries_yearly_PPP, fig.asp=4}
 
 ggplot()+
   geom_point(data = fm_ppp_dup, aes(as.Date(yday(date)), SST), color = "grey")+
   geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), SST, color = as.factor(ppp)))+
-  scale_y_continuous(breaks = seq(1000,2000,100),
-                     minor_breaks = seq(1000,2000,20))+
   scale_x_date(date_minor_breaks = "week",
                date_labels = "%b")+
   scale_color_brewer(palette = "Set1", name="PPP")+
