@@ -695,7 +695,7 @@ ggplot()+
 
 ggplot()+
   geom_point(data = df, aes(as.Date(yday(date)), SST), color = "grey")+
-  geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), SST, color = as.factor(ppp)))+
+  geom_point(data = fm_ppp_final, aes(as.Date(yday(date)), SST, color = as.factor(ppp_2)))+
   scale_x_date(date_minor_breaks = "week",
                date_labels = "%b")+
   scale_color_brewer(palette = "Set1", name="PPP")+
