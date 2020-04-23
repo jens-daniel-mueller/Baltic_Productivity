@@ -519,39 +519,37 @@ years <- (unique(df_ppp$year))
 # first of three loops, loops through each observatio year
 # we get the number of deployments within this year for further analysis
 for (n in years) {
+
+  a <- 1
   
-  deployment <- df_ppp %>% 
-    filter(year == n)
-    deployment <- max(deployment$deployment)
+  deployment_year <- df_ppp %>% 
+    filter(year == n) 
   
-  a <- 1 #ppp enumeration starts new for each year
-  start <- "stop" #start variable is set "no" for condition to work, no start possible at beginning of a new deployment
+  deployment_values <- unique(deployment_year$deployment)
+    
+  start <- "stop"
   end <- "stop"
   
   # second of three loops, loops through each deployment within on year
-  for (d in 1:deployment){
+  for (d in deployment_values){
    
-    a <- 1
+    a <- a+1
+    
     df_ppp_temp <- df_ppp %>% 
       filter(year == n  , deployment == d) %>% 
       mutate(ppp = NA)
-    
-    if(nrow(df_ppp_temp) == 0){next} #e.g. 2011 deployment 1 is empty, would stop there otherwise
     
     # third of three loops, within on deployment of year n, we check ppp criteria for every row
     for (x in 1:nrow(df_ppp_temp)){
       
     if (start == "stop" & end == "stop" & is.na(df_ppp_temp$ppp[x]) == TRUE){a <- a +1 
-    } else {a <- a} #while we are in a ppp (checked by start == start) the control number stays the same, if start was no, it is counted up, for every loop it is "no" variable gets counted up, because of that, reassignment at the end still necessary, but reliable, becuase not with date gap, but with ppp gap
-  
-      if (start == "stop" & end == "stop" | start== "go" & end == "stop"){
+    } else {a <- a}
+      
     ##start criteria
     # define subdataset looking forward "timespan_start" days
     lag_start <- df_ppp_temp %>% 
     filter(date >= date[x], date <= (date[x]+ duration(timespan_start, 'days')))
     
-    
-    #roll_index <- which.max(lag_start$date) 
     roll_index <- which.min(lag_start$CT)  #Minimum CT-value in 7 day forward
     roll_value <- lag_start$CT[roll_index] # get exact minimum CT value within subdataset 
     
@@ -571,33 +569,23 @@ for (n in years) {
     
     start <- "go" #condition for end-criteria; only TRUE when there was the necessary decrease
     
-    #new ppp value is only assigned, if ppp currently is NA, that way mixing of numbers because of jumps in data is prohibited
+    df_ppp_temp$ppp[x:roll_index_df] <- as.numeric(a)
     
-#   if(is.na(df_ppp_temp$ppp[x:roll_index_df] == TRUE)){ #:roll_index_df
-#    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(a) #loop date x : minimum CT within 7 days forward get #assigned the same ppp
-#    
-#   } else{is.na(df_ppp_temp[x:roll_index_df])}
-
-    replace <- as.numeric(c(df_ppp_temp$ppp[x:roll_index_df]))
-    ifelse(is.na(df_ppp_temp$ppp[x:roll_index_df]),
-    df_ppp_temp$ppp[x:roll_index_df] <- as.numeric(a),
-    df_ppp_temp$ppp[x:roll_index_df] <- replace)    
+    } else{start <- "stop"} # end of l. 566; if CT >= decrease_start
     
-    
-    } else{#df_ppp_temp$ppp[x] = NA
-           start <- "stop"}
     rm(roll_index_df)
-    } else {}#start <- "stop"} #if we don't have a roll_value or the criterion of decrease is not met start is set FALSE, so that end criteria don't kick in without a start
-      } else {}
+    
+    } else {} # end of l.555 ;if we don't have a roll_value or the criterion of decrease is not met start is set FALSE, so that end criteria don't kick in without a start
+      
+    
     ##end criteria
     
-    #was there a start? then same procdure as for start criterion but looking backwards
-    if (start == "go" | start == "stop" & end == "go"){
+    #was there a start? 
+    if (start == "go" | start == "stop" & end == "go"| start == "go" & end == "go"){
     
     lag_end <- df_ppp_temp %>% 
     filter(date < date[x], date >= (date[x]- duration(timespan_end, 'days')))
 
-    #roll_index <- which.max(lag_end$date) 
     roll_index <- which.max(lag_end$CT) #in contrast to start we search for the maximum CT value here when looking backwards
     roll_value <- lag_end$CT[roll_index]
     
@@ -611,18 +599,19 @@ for (n in years) {
   
     if (roll_value-df_ppp_temp$CT[x] >= decrease_end){
     
-    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(a) #loop date x : minimum CT within 7 days backwards get assigned the same ppp, if criterion was met
+    df_ppp_temp$ppp[x] = as.numeric(a) 
     end <- "go"
- rm(roll_index_df)
-    } else{end <- "stop"} #if criterion is not met, we do nothing as NAs are already assigned in start and this would potentially overwrite an existing ppp entry
     
-    } else {} #if we can't look backwards, we jump to the next loop iteration
+    rm(roll_index_df)
+    
+    } else{end <- "stop"} # end of l.598; if CT >= decrease_end
+    
+    } else {}             # end of l.590; if roll_value = empty; if we can't look backwards, we jump to the next loop iteration
     
     rm(lag_end)
     
-    }else {end <- "stop"
-      start < "stop"}
-      #a <- a+1 }#end start == TRUE condition
+    } else {end <- "stop"
+      start < "stop"}   #end l. 582; start == TRUE condition
     
     rm(roll_index, roll_value)
     
@@ -633,27 +622,24 @@ for (n in years) {
     }else{fm_ppp <- df_ppp_temp}
     
     rm(df_ppp_temp)
+    
   }#end of loop through deployments
+  
+  rm(deployment_year, deployment_values)
+  
 }#end of loop through years
 
-# remove duplicates and NAs
-#fm_ppp_dup <- fm_ppp[!duplicated(fm_ppp),] %>% 
-#  arrange(date)
 
 fm_ppp_na <- fm_ppp %>% 
   drop_na()
 
-# enumeration of ppps, remove duplicates again 
+# enumeration of ppps
 
-#ppps are now reliably numbered, but not correctly from 1-2-3 etc. so they get renumbered again, new number starting from 1 whenever the gap in ppp is > 1
+#ppps continous numerations
 fm_ppp_final <- fm_ppp_na %>% 
   group_by(year) %>%
-  #mutate(contvar = cumsum(c(TRUE, abs(diff(date)>=7)))) %>%
-  #mutate(ppp_2 = contvar*ppp) %>% 
   mutate(ppp_2 = as.factor(cumsum(c(TRUE,abs(diff(ppp))>=1)))) %>% 
   ungroup()
-
-fm_ppp_final <- fm_ppp_final[!duplicated(fm_ppp_final),]
 
 ggplot()+
   geom_point(data = df, aes(as.Date(yday(date)), year), col="grey")+
