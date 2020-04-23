@@ -542,16 +542,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytreeb54b53b513d839f0fd876b46fb829db498abb92btargetblankb54b53ba"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/b54b53b513d839f0fd876b46fb829db498abb92b" target="_blank">b54b53b</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree8c4ccb4e579cb7e86f76f90a4301f7345b1e6cb3targetblank8c4ccb4a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/8c4ccb4e579cb7e86f76f90a4301f7345b1e6cb3" target="_blank">8c4ccb4</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytreeb54b53b513d839f0fd876b46fb829db498abb92btargetblankb54b53ba" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomjensdanielmuellerBalticProductivitytree8c4ccb4e579cb7e86f76f90a4301f7345b1e6cb3targetblank8c4ccb4a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/b54b53b513d839f0fd876b46fb829db498abb92b" target="_blank">b54b53b</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/tree/8c4ccb4e579cb7e86f76f90a4301f7345b1e6cb3" target="_blank">8c4ccb4</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -604,6 +604,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/jens-daniel-mueller/Baltic_Productivity/blob/8c4ccb4e579cb7e86f76f90a4301f7345b1e6cb3/analysis/CT.Rmd" target="_blank">8c4ccb4</a>
+</td>
+<td>
+LSBurchardt
+</td>
+<td>
+2020-04-23
+</td>
+<td>
+#3 functionality largely improved
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/jens-daniel-mueller/Baltic_Productivity/84b3027301c5b87d240b28f9a79c22fb1e2e7dfe/docs/CT.html" target="_blank">84b3027</a>
+</td>
+<td>
+jens-daniel-mueller
+</td>
+<td>
+2020-04-23
+</td>
+<td>
+Build site.
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -2160,39 +2194,37 @@ years &lt;- (unique(df_ppp$year))
 # first of three loops, loops through each observatio year
 # we get the number of deployments within this year for further analysis
 for (n in years) {
+
+  a &lt;- 1
   
-  deployment &lt;- df_ppp %&gt;% 
-    filter(year == n)
-    deployment &lt;- max(deployment$deployment)
+  deployment_year &lt;- df_ppp %&gt;% 
+    filter(year == n) 
   
-  a &lt;- 1 #ppp enumeration starts new for each year
-  start &lt;- &quot;stop&quot; #start variable is set &quot;no&quot; for condition to work, no start possible at beginning of a new deployment
+  deployment_values &lt;- unique(deployment_year$deployment)
+    
+  start &lt;- &quot;stop&quot;
   end &lt;- &quot;stop&quot;
   
   # second of three loops, loops through each deployment within on year
-  for (d in 1:deployment){
+  for (d in deployment_values){
    
-    a &lt;- 1
+    a &lt;- a+1
+    
     df_ppp_temp &lt;- df_ppp %&gt;% 
       filter(year == n  , deployment == d) %&gt;% 
       mutate(ppp = NA)
-    
-    if(nrow(df_ppp_temp) == 0){next} #e.g. 2011 deployment 1 is empty, would stop there otherwise
     
     # third of three loops, within on deployment of year n, we check ppp criteria for every row
     for (x in 1:nrow(df_ppp_temp)){
       
     if (start == &quot;stop&quot; &amp; end == &quot;stop&quot; &amp; is.na(df_ppp_temp$ppp[x]) == TRUE){a &lt;- a +1 
-    } else {a &lt;- a} #while we are in a ppp (checked by start == start) the control number stays the same, if start was no, it is counted up, for every loop it is &quot;no&quot; variable gets counted up, because of that, reassignment at the end still necessary, but reliable, becuase not with date gap, but with ppp gap
-  
-      if (start == &quot;stop&quot; &amp; end == &quot;stop&quot; | start== &quot;go&quot; &amp; end == &quot;stop&quot;){
+    } else {a &lt;- a}
+      
     ##start criteria
     # define subdataset looking forward &quot;timespan_start&quot; days
     lag_start &lt;- df_ppp_temp %&gt;% 
     filter(date &gt;= date[x], date &lt;= (date[x]+ duration(timespan_start, &#39;days&#39;)))
     
-    
-    #roll_index &lt;- which.max(lag_start$date) 
     roll_index &lt;- which.min(lag_start$CT)  #Minimum CT-value in 7 day forward
     roll_value &lt;- lag_start$CT[roll_index] # get exact minimum CT value within subdataset 
     
@@ -2212,33 +2244,23 @@ for (n in years) {
     
     start &lt;- &quot;go&quot; #condition for end-criteria; only TRUE when there was the necessary decrease
     
-    #new ppp value is only assigned, if ppp currently is NA, that way mixing of numbers because of jumps in data is prohibited
+    df_ppp_temp$ppp[x:roll_index_df] &lt;- as.numeric(a)
     
-#   if(is.na(df_ppp_temp$ppp[x:roll_index_df] == TRUE)){ #:roll_index_df
-#    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(a) #loop date x : minimum CT within 7 days forward get #assigned the same ppp
-#    
-#   } else{is.na(df_ppp_temp[x:roll_index_df])}
-
-    replace &lt;- as.numeric(c(df_ppp_temp$ppp[x:roll_index_df]))
-    ifelse(is.na(df_ppp_temp$ppp[x:roll_index_df]),
-    df_ppp_temp$ppp[x:roll_index_df] &lt;- as.numeric(a),
-    df_ppp_temp$ppp[x:roll_index_df] &lt;- replace)    
+    } else{start &lt;- &quot;stop&quot;} # end of l. 566; if CT &gt;= decrease_start
     
-    
-    } else{#df_ppp_temp$ppp[x] = NA
-           start &lt;- &quot;stop&quot;}
     rm(roll_index_df)
-    } else {}#start &lt;- &quot;stop&quot;} #if we don&#39;t have a roll_value or the criterion of decrease is not met start is set FALSE, so that end criteria don&#39;t kick in without a start
-      } else {}
+    
+    } else {} # end of l.555 ;if we don&#39;t have a roll_value or the criterion of decrease is not met start is set FALSE, so that end criteria don&#39;t kick in without a start
+      
+    
     ##end criteria
     
-    #was there a start? then same procdure as for start criterion but looking backwards
-    if (start == &quot;go&quot; | start == &quot;stop&quot; &amp; end == &quot;go&quot;){
+    #was there a start? 
+    if (start == &quot;go&quot; | start == &quot;stop&quot; &amp; end == &quot;go&quot;| start == &quot;go&quot; &amp; end == &quot;go&quot;){
     
     lag_end &lt;- df_ppp_temp %&gt;% 
     filter(date &lt; date[x], date &gt;= (date[x]- duration(timespan_end, &#39;days&#39;)))
 
-    #roll_index &lt;- which.max(lag_end$date) 
     roll_index &lt;- which.max(lag_end$CT) #in contrast to start we search for the maximum CT value here when looking backwards
     roll_value &lt;- lag_end$CT[roll_index]
     
@@ -2252,18 +2274,19 @@ for (n in years) {
   
     if (roll_value-df_ppp_temp$CT[x] &gt;= decrease_end){
     
-    df_ppp_temp$ppp[x:roll_index_df] = as.numeric(a) #loop date x : minimum CT within 7 days backwards get assigned the same ppp, if criterion was met
+    df_ppp_temp$ppp[x] = as.numeric(a) 
     end &lt;- &quot;go&quot;
- rm(roll_index_df)
-    } else{end &lt;- &quot;stop&quot;} #if criterion is not met, we do nothing as NAs are already assigned in start and this would potentially overwrite an existing ppp entry
     
-    } else {} #if we can&#39;t look backwards, we jump to the next loop iteration
+    rm(roll_index_df)
+    
+    } else{end &lt;- &quot;stop&quot;} # end of l.598; if CT &gt;= decrease_end
+    
+    } else {}             # end of l.590; if roll_value = empty; if we can&#39;t look backwards, we jump to the next loop iteration
     
     rm(lag_end)
     
-    }else {end &lt;- &quot;stop&quot;
-      start &lt; &quot;stop&quot;}
-      #a &lt;- a+1 }#end start == TRUE condition
+    } else {end &lt;- &quot;stop&quot;
+      start &lt; &quot;stop&quot;}   #end l. 582; start == TRUE condition
     
     rm(roll_index, roll_value)
     
@@ -2274,27 +2297,24 @@ for (n in years) {
     }else{fm_ppp &lt;- df_ppp_temp}
     
     rm(df_ppp_temp)
+    
   }#end of loop through deployments
+  
+  rm(deployment_year, deployment_values)
+  
 }#end of loop through years
 
-# remove duplicates and NAs
-#fm_ppp_dup &lt;- fm_ppp[!duplicated(fm_ppp),] %&gt;% 
-#  arrange(date)
 
 fm_ppp_na &lt;- fm_ppp %&gt;% 
   drop_na()
 
-# enumeration of ppps, remove duplicates again 
+# enumeration of ppps
 
-#ppps are now reliably numbered, but not correctly from 1-2-3 etc. so they get renumbered again, new number starting from 1 whenever the gap in ppp is &gt; 1
+#ppps continous numerations
 fm_ppp_final &lt;- fm_ppp_na %&gt;% 
   group_by(year) %&gt;%
-  #mutate(contvar = cumsum(c(TRUE, abs(diff(date)&gt;=7)))) %&gt;%
-  #mutate(ppp_2 = contvar*ppp) %&gt;% 
   mutate(ppp_2 = as.factor(cumsum(c(TRUE,abs(diff(ppp))&gt;=1)))) %&gt;% 
   ungroup()
-
-fm_ppp_final &lt;- fm_ppp_final[!duplicated(fm_ppp_final),]
 
 ggplot()+
   geom_point(data = df, aes(as.Date(yday(date)), year), col=&quot;grey&quot;)+
